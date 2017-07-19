@@ -16,6 +16,8 @@
 package org.thingsboard.server.extensions.rest.plugin;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -33,6 +35,7 @@ import org.thingsboard.server.extensions.rest.action.RestApiCallActionMsg;
 import org.thingsboard.server.extensions.rest.action.RestApiCallActionPayload;
 
 @RequiredArgsConstructor
+@Slf4j
 public class RestApiCallMsgHandler implements RuleMsgHandler {
 
     private final String baseUrl;
@@ -45,6 +48,9 @@ public class RestApiCallMsgHandler implements RuleMsgHandler {
         }
         RestApiCallActionPayload payload = ((RestApiCallActionMsg)msg).getPayload();
         try {
+          log.info("baseUrl:{},payload.getActionPath():{}", baseUrl, payload.getActionPath());
+          log.info("payload.getHttpMethod():{}", payload.getHttpMethod());
+          log.info("headers:{}", headers);
             ResponseEntity<String> exchangeResponse = new RestTemplate().exchange(
                     baseUrl + payload.getActionPath(),
                     payload.getHttpMethod(),

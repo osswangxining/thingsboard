@@ -15,6 +15,21 @@
  */
 package org.thingsboard.server.transport.mqtt;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationContext;
+import org.springframework.stereotype.Service;
+import org.thingsboard.server.common.transport.SessionMsgProcessor;
+import org.thingsboard.server.common.transport.auth.AssetAuthService;
+import org.thingsboard.server.common.transport.auth.DeviceAuthService;
+import org.thingsboard.server.dao.asset.AssetService;
+import org.thingsboard.server.dao.device.DeviceService;
+import org.thingsboard.server.dao.relation.RelationService;
+import org.thingsboard.server.transport.mqtt.adaptors.MqttTransportAdaptor;
+
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
@@ -22,18 +37,6 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.util.ResourceLeakDetector;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.ApplicationContext;
-import org.springframework.stereotype.Service;
-import org.thingsboard.server.common.transport.SessionMsgProcessor;
-import org.thingsboard.server.common.transport.auth.DeviceAuthService;
-import org.thingsboard.server.dao.device.DeviceService;
-import org.thingsboard.server.dao.relation.RelationService;
-import org.thingsboard.server.transport.mqtt.adaptors.MqttTransportAdaptor;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 
 /**
  * @author Andrew Shvayka
@@ -57,6 +60,12 @@ public class MqttTransportService {
     @Autowired(required = false)
     private DeviceAuthService authService;
 
+    @Autowired(required = false)
+    private AssetService assetService;
+    
+    @Autowired(required = false)
+    private AssetAuthService assetAuthService;
+    
     @Autowired(required = false)
     private RelationService relationService;
 
@@ -99,7 +108,7 @@ public class MqttTransportService {
         ServerBootstrap b = new ServerBootstrap();
         b.group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
-                .childHandler(new MqttTransportServerInitializer(processor, deviceService, authService, relationService, adaptor, sslHandlerProvider));
+                .childHandler(new MqttTransportServerInitializer(processor, deviceService, authService, assetService, assetAuthService, relationService, adaptor, sslHandlerProvider));
 
         serverChannel = b.bind(host, port).sync().channel();
         log.info("Mqtt transport started!");

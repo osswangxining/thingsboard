@@ -201,6 +201,12 @@ function Menu(userService, $state, $rootScope) {
                             icon: 'devices_other'
                         },
                         {
+                            name: 'devicetype.devicetypes',
+                            type: 'link',
+                            state: 'home.devicetypes',
+                            icon: 'devices_other'
+                        },
+                        {
                             name: 'widget.widget-library',
                             type: 'link',
                             state: 'home.widgets-bundles',
@@ -256,6 +262,12 @@ function Menu(userService, $state, $rootScope) {
                                         name: 'device.devices',
                                         icon: 'devices_other',
                                         state: 'home.devices'
+                                    },
+                                    {
+                                        name: 'devicetype.devicetypes',
+                                        type: 'link',
+                                        state: 'home.devicetypes',
+                                        icon: 'devices_other'
                                     }
                                 ]
                             },

@@ -15,9 +15,6 @@
  */
 package org.thingsboard.server.actors.session;
 
-import akka.actor.OneForOneStrategy;
-import akka.actor.SupervisorStrategy;
-import akka.japi.Function;
 import org.thingsboard.server.actors.ActorSystemContext;
 import org.thingsboard.server.actors.service.ContextAwareActor;
 import org.thingsboard.server.actors.service.ContextBasedCreator;
@@ -25,12 +22,15 @@ import org.thingsboard.server.actors.shared.SessionTimeoutMsg;
 import org.thingsboard.server.common.data.id.SessionId;
 import org.thingsboard.server.common.msg.cluster.ClusterEventMsg;
 import org.thingsboard.server.common.msg.core.ToDeviceSessionActorMsg;
-import org.thingsboard.server.common.msg.session.ToDeviceActorSessionMsg;
 import org.thingsboard.server.common.msg.session.SessionCtrlMsg;
 import org.thingsboard.server.common.msg.session.SessionMsg;
 import org.thingsboard.server.common.msg.session.SessionType;
+import org.thingsboard.server.common.msg.session.ToAssetActorSessionMsg;
+import org.thingsboard.server.common.msg.session.ToDeviceActorSessionMsg;
 import org.thingsboard.server.common.msg.session.ctrl.SessionCloseMsg;
 
+import akka.actor.OneForOneStrategy;
+import akka.actor.SupervisorStrategy;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import scala.concurrent.duration.Duration;
@@ -62,11 +62,16 @@ public class SessionActor extends ContextAwareActor {
 
     @Override
     public void onReceive(Object msg) throws Exception {
-        logger.debug("[{}] Processing: {}.", sessionId, msg);
+        logger.info("[{}] Processing: {}.", sessionId, msg);
         if (msg instanceof ToDeviceActorSessionMsg) {
             processDeviceMsg((ToDeviceActorSessionMsg) msg);
         } else if (msg instanceof ToDeviceSessionActorMsg) {
             processToDeviceMsg((ToDeviceSessionActorMsg) msg);
+        } else if (msg instanceof ToAssetActorSessionMsg) {
+            processAssetMsg((ToAssetActorSessionMsg) msg);
+          //@ TODO
+//        } else if (msg instanceof ToAssetSessionActorMsg) {
+//          processToAssetMsg((ToAssetSessionActorMsg) msg);
         } else if (msg instanceof SessionTimeoutMsg) {
             processTimeoutMsg((SessionTimeoutMsg) msg);
         } else if (msg instanceof SessionCtrlMsg) {
@@ -83,10 +88,15 @@ public class SessionActor extends ContextAwareActor {
     }
 
     private void processDeviceMsg(ToDeviceActorSessionMsg msg) {
-        initProcessor(msg);
+        initProcessor(msg.getSessionMsg());
         processor.processToDeviceActorMsg(context(), msg);
     }
 
+    private void processAssetMsg(ToAssetActorSessionMsg msg) {
+      initProcessor(msg.getSessionMsg());
+      processor.processToAssetActorMsg(context(), msg);
+    }
+    
     private void processToDeviceMsg(ToDeviceSessionActorMsg msg) {
         processor.processToDeviceMsg(context(), msg.getMsg());
     }
@@ -109,9 +119,9 @@ public class SessionActor extends ContextAwareActor {
         }
     }
 
-    private void initProcessor(ToDeviceActorSessionMsg msg) {
+    private void initProcessor(SessionMsg sessionMsg) {
         if (processor == null) {
-            SessionMsg sessionMsg = (SessionMsg) msg.getSessionMsg();
+            //SessionMsg sessionMsg = (SessionMsg) msg.getSessionMsg();
             if (sessionMsg.getSessionContext().getSessionType() == SessionType.SYNC) {
                 processor = new SyncMsgProcessor(systemContext, logger, sessionId);
             } else {

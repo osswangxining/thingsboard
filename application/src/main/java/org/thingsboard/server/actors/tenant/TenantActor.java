@@ -31,19 +31,21 @@ import org.thingsboard.server.actors.shared.plugin.PluginManager;
 import org.thingsboard.server.actors.shared.plugin.TenantPluginManager;
 import org.thingsboard.server.actors.shared.rule.RuleManager;
 import org.thingsboard.server.actors.shared.rule.TenantRuleManager;
+import org.thingsboard.server.common.data.id.AssetId;
 import org.thingsboard.server.common.data.id.DeviceId;
 import org.thingsboard.server.common.data.id.TenantId;
+import org.thingsboard.server.common.msg.asset.ToAssetActorMsg;
 import org.thingsboard.server.common.msg.cluster.ClusterEventMsg;
 import org.thingsboard.server.common.msg.device.ToDeviceActorMsg;
+import org.thingsboard.server.common.msg.plugin.ComponentLifecycleMsg;
+import org.thingsboard.server.extensions.api.device.ToDeviceActorNotificationMsg;
+import org.thingsboard.server.extensions.api.plugins.msg.ToPluginActorMsg;
+import org.thingsboard.server.extensions.api.rules.ToRuleActorMsg;
 
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
-import org.thingsboard.server.common.msg.plugin.ComponentLifecycleMsg;
-import org.thingsboard.server.extensions.api.device.ToDeviceActorNotificationMsg;
-import org.thingsboard.server.extensions.api.plugins.msg.ToPluginActorMsg;
-import org.thingsboard.server.extensions.api.rules.ToRuleActorMsg;
 
 public class TenantActor extends ContextAwareActor {
 
@@ -81,6 +83,8 @@ public class TenantActor extends ContextAwareActor {
             process((RuleChainDeviceMsg) msg);
         } else if (msg instanceof ToDeviceActorMsg) {
             onToDeviceActorMsg((ToDeviceActorMsg) msg);
+        } else if (msg instanceof ToAssetActorMsg) {
+          onToAssetActorMsg((ToAssetActorMsg) msg);
         } else if (msg instanceof ToPluginActorMsg) {
             onToPluginMsg((ToPluginActorMsg) msg);
         } else if (msg instanceof ToRuleActorMsg) {
@@ -105,6 +109,10 @@ public class TenantActor extends ContextAwareActor {
 
     private void onToDeviceActorMsg(ToDeviceActorMsg msg) {
         getOrCreateDeviceActor(msg.getDeviceId()).tell(msg, ActorRef.noSender());
+    }
+    
+    private void onToAssetActorMsg(ToAssetActorMsg msg) {
+      getOrCreateDeviceActor(msg.getAssetId()).tell(msg, ActorRef.noSender());
     }
 
     private void onToDeviceActorMsg(ToDeviceActorNotificationMsg msg) {
@@ -150,9 +158,12 @@ public class TenantActor extends ContextAwareActor {
 
     private void process(RuleChainDeviceMsg msg) {
         ToDeviceActorMsg toDeviceActorMsg = msg.getToDeviceActorMsg();
+        if(toDeviceActorMsg == null) {
+          return;
+        }
         ActorRef deviceActor = getOrCreateDeviceActor(toDeviceActorMsg.getDeviceId());
         RuleActorChain chain = new ComplexRuleActorChain(msg.getRuleChain(), ruleManager.getRuleChain());
-        deviceActor.tell(new RuleChainDeviceMsg(toDeviceActorMsg, chain), context().self());
+        deviceActor.tell(new RuleChainDeviceMsg(toDeviceActorMsg, msg.getToAssetActorMsg(), chain), context().self());
     }
 
     private ActorRef getOrCreateDeviceActor(DeviceId deviceId) {

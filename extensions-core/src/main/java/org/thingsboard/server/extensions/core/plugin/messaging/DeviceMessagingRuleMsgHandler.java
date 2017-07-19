@@ -135,6 +135,7 @@ public class DeviceMessagingRuleMsgHandler implements RuleMsgHandler {
         DeviceId targetDeviceId = DeviceId.fromString(targetDeviceIdStr);
         boolean oneWay = isOneWay(params);
         long timeout = getTimeout(params);
+        log.info("params: {}, oneWay: {}, timeout: [{}]", params, oneWay, timeout);
         if (timeout <= 0) {
             replyWithError(ctx, requestMd, "Timeout can't be negative!");
         } else if (timeout > configuration.getMaxTimeout()) {
@@ -150,7 +151,7 @@ public class DeviceMessagingRuleMsgHandler implements RuleMsgHandler {
                             requestMd.getTenantId().equals(targetDevice.getTenantId())
                             && requestMd.getCustomerId().equals(targetDevice.getCustomerId())) {
                         pendingMsgs.put(uid, requestMd);
-                        log.trace("[{}] Forwarding {} to [{}]", uid, params, targetDeviceId);
+                        log.info("[{}] Forwarding {} to [{}]", uid, params, targetDeviceId);
                         ToDeviceRpcRequestBody requestBody = new ToDeviceRpcRequestBody(ON_MSG_METHOD_NAME, GSON.toJson(params.get("body")));
                         ctx.sendRpcRequest(new ToDeviceRpcRequest(uid, targetDevice.getTenantId(), targetDeviceId, oneWay, System.currentTimeMillis() + timeout, requestBody));
                     } else {

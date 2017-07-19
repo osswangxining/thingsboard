@@ -22,9 +22,12 @@ import org.thingsboard.server.common.data.EntityType;
 
 import java.util.UUID;
 
-public class AssetId extends UUIDBased implements EntityId {
+public class AssetId extends DeviceId {
 
-    private static final long serialVersionUID = 1L;
+    /**
+   * 
+   */
+  private static final long serialVersionUID = 2103713328154494886L;
 
     @JsonCreator
     public AssetId(@JsonProperty("id") UUID id) {

@@ -41,6 +41,17 @@ public class MqttTopics {
     public static final String GATEWAY_ATTRIBUTES_RESPONSE_TOPIC = BASE_GATEWAY_API_TOPIC + "/attributes/response";
 
 
+    public static final String BASE_THING_API_TOPIC = "v1/thing";
+    public static final String THING_RPC_RESPONSE_TOPIC = BASE_THING_API_TOPIC + "/rpc/response/";
+    public static final String THING_RPC_RESPONSE_SUB_TOPIC = THING_RPC_RESPONSE_TOPIC + "+";
+    public static final String THING_RPC_REQUESTS_TOPIC = BASE_THING_API_TOPIC + "/rpc/request/";
+    public static final String THING_RPC_REQUESTS_SUB_TOPIC = THING_RPC_REQUESTS_TOPIC + "+";
+    public static final String THING_ATTRIBUTES_RESPONSE_TOPIC_PREFIX = BASE_THING_API_TOPIC + "/attributes/response/";
+    public static final String THING_ATTRIBUTES_RESPONSES_TOPIC = THING_ATTRIBUTES_RESPONSE_TOPIC_PREFIX + "+";
+    public static final String THING_ATTRIBUTES_REQUEST_TOPIC_PREFIX = BASE_THING_API_TOPIC + "/attributes/request/";
+    public static final String THING_TELEMETRY_TOPIC = BASE_THING_API_TOPIC + "/telemetry";
+    public static final String THING_ATTRIBUTES_TOPIC = BASE_THING_API_TOPIC + "/attributes";
+    
     private MqttTopics() {
     }
 }

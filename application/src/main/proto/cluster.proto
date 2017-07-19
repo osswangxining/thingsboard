@@ -44,11 +44,19 @@ message ToDeviceActorRpcMessage {
   bytes data = 1;
 }
 
+message ToAssetActorRpcMessage {
+  bytes data = 1;
+}
+
 message ToDeviceSessionActorRpcMessage {
   bytes data = 1;
 }
 
 message ToDeviceActorNotificationRpcMessage {
+  bytes data = 1;
+}
+
+message ToAssetActorNotificationRpcMessage {
   bytes data = 1;
 }
 
@@ -89,6 +97,8 @@ message ToRpcServerMessage {
   ToAllNodesRpcMessage toAllNodesRpcMsg = 6;
   ToDeviceRpcRequestRpcMessage toDeviceRpcRequestRpcMsg = 7;
   ToPluginRpcResponseRpcMessage toPluginRpcResponseRpcMsg = 8;
+  ToAssetActorRpcMessage toAssetActorRpcMsg = 9;
+  ToAssetActorNotificationRpcMessage toAssetActorNotificationRpcMsg = 10;
 }
 
 service ClusterRpcService {

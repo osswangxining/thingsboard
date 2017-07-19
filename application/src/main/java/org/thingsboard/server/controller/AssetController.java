@@ -15,10 +15,20 @@
  */
 package org.thingsboard.server.controller;
 
-import com.google.common.util.concurrent.ListenableFuture;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.server.common.data.Customer;
 import org.thingsboard.server.common.data.asset.Asset;
 import org.thingsboard.server.common.data.asset.TenantAssetType;
@@ -27,15 +37,14 @@ import org.thingsboard.server.common.data.id.CustomerId;
 import org.thingsboard.server.common.data.id.TenantId;
 import org.thingsboard.server.common.data.page.TextPageData;
 import org.thingsboard.server.common.data.page.TextPageLink;
+import org.thingsboard.server.common.data.security.AssetCredentials;
 import org.thingsboard.server.dao.asset.AssetSearchQuery;
 import org.thingsboard.server.dao.exception.IncorrectParameterException;
 import org.thingsboard.server.dao.model.ModelConstants;
 import org.thingsboard.server.exception.ThingsboardException;
 import org.thingsboard.server.service.security.model.SecurityUser;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
+import com.google.common.util.concurrent.ListenableFuture;
 
 @RestController
 @RequestMapping("/api")
@@ -132,6 +141,35 @@ public class AssetController extends BaseController {
         }
     }
 
+    @PreAuthorize("hasAnyAuthority('TENANT_ADMIN', 'CUSTOMER_USER')")
+    @RequestMapping(value = "/asset/{assetId}/credentials", method = RequestMethod.GET)
+    @ResponseBody
+    public AssetCredentials getAssetCredentialsByAssetId(@PathVariable("assetId") String strAssetId) throws ThingsboardException {
+        checkParameter("assetId", strAssetId);
+        try {
+            AssetId assetId = new AssetId(toUUID(strAssetId));
+            checkAssetId(assetId);
+            return checkNotNull(assetCredentialsService.findAssetCredentialsByAssetId(assetId));
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+
+    @PreAuthorize("hasAuthority('TENANT_ADMIN')")
+    @RequestMapping(value = "/asset/credentials", method = RequestMethod.POST)
+    @ResponseBody
+    public AssetCredentials saveAssetCredentials(@RequestBody AssetCredentials assetCredentials) throws ThingsboardException {
+        checkNotNull(assetCredentials);
+        try {
+            checkAssetId(assetCredentials.getAssetId());
+            AssetCredentials result = checkNotNull(assetCredentialsService.updateAssetCredentials(assetCredentials));
+            actorService.onCredentialsUpdate(getCurrentUser().getTenantId(), assetCredentials.getAssetId());
+            return result;
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+    
     @PreAuthorize("hasAuthority('TENANT_ADMIN')")
     @RequestMapping(value = "/tenant/assets", params = {"limit"}, method = RequestMethod.GET)
     @ResponseBody

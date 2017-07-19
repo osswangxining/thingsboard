@@ -24,6 +24,10 @@
 <md-button ng-click="onUnassignFromCustomer({event: $event, isPublic: isPublic})"
            ng-show="!isEdit && (assetScope === 'customer' || assetScope === 'tenant') && isAssignedToCustomer"
            class="md-raised md-primary">{{ isPublic ? 'asset.make-private' : 'asset.unassign-from-customer' | translate }}</md-button>
+<md-button ng-click="onManageCredentials({event: $event})"
+           ng-show="!isEdit"
+           class="md-raised md-primary">{{ (assetScope === 'customer_user' ? 'asset.view-credentials' : 'asset.manage-credentials') | translate }}</md-button>
+
 <md-button ng-click="onDeleteAsset({event: $event})"
            ng-show="!isEdit && assetScope === 'tenant'"
            class="md-raised md-primary">{{ 'asset.delete' | translate }}</md-button>
@@ -35,6 +39,13 @@
                class="md-raised">
         <md-icon md-svg-icon="mdi:clipboard-arrow-left"></md-icon>
         <span translate>asset.copyId</span>
+    </md-button>
+    <md-button ngclipboard data-clipboard-action="copy"
+               ngclipboard-success="onAccessTokenCopied(e)"
+               data-clipboard-text="{{assetCredentials.credentialsId}}" ng-show="!isEdit"
+               class="md-raised">
+        <md-icon md-svg-icon="mdi:clipboard-arrow-left"></md-icon>
+        <span translate>asset.copyAccessToken</span>
     </md-button>
 </div>
 

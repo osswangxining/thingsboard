@@ -1,6 +1,6 @@
 {
   "schema": {
-    "title": "Send Mail Action Configuration",
+    "title": "Alarm Deduplication Processor Configuration",
     "type": "object",
     "properties": {
       "alarmIdTemplate": {

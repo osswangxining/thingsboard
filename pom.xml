@@ -185,7 +185,7 @@
                         <protocArtifact>com.google.protobuf:protoc:${protobuf.version}:exe:${os.detected.classifier}
                         </protocArtifact>
                         <pluginId>grpc-java</pluginId>
-                        <pluginArtifact>io.grpc:protoc-gen-grpc-java:1.0.0:exe:${os.detected.classifier}
+                        <pluginArtifact>io.grpc:protoc-gen-grpc-java:1.0.2:exe:${os.detected.classifier}
                         </pluginArtifact>
                     </configuration>
                     <executions>
@@ -257,6 +257,7 @@
                             <owner>The Thingsboard Authors</owner>
                         </properties>
                         <excludes>
+                            <exclude>**/*.java</exclude>
                             <exclude>**/.env</exclude>
                             <exclude>**/.eslintrc</exclude>
                             <exclude>**/.babelrc</exclude>
@@ -768,6 +769,7 @@
             <id>central</id>
             <url>http://repo1.maven.org/maven2/</url>
         </repository>
+        <!-- 
         <repository>
             <id>spring-snapshots</id>
             <name>Spring Snapshots</name>
@@ -776,6 +778,7 @@
                 <enabled>true</enabled>
             </snapshots>
         </repository>
+         
         <repository>
             <id>spring-milestones</id>
             <name>Spring Milestones</name>
@@ -793,6 +796,11 @@
             <id>sonatype</id>
             <url>https://oss.sonatype.org/content/groups/public</url>
         </repository>
+        <repository>
+            <id>repo1-maven2</id>
+            <url>https://repo1.maven.org/maven2</url>
+        </repository>
+        -->
     </repositories>
 
 </project>

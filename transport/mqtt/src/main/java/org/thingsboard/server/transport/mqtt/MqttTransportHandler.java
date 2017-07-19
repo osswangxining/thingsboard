@@ -15,44 +15,96 @@
  */
 package org.thingsboard.server.transport.mqtt;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.handler.codec.mqtt.*;
-import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
-import io.netty.handler.codec.mqtt.MqttQoS;
-import io.netty.handler.ssl.SslHandler;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.GenericFutureListener;
-import lombok.extern.slf4j.Slf4j;
+import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_ACCEPTED;
+import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD;
+import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED;
+import static io.netty.handler.codec.mqtt.MqttMessageType.CONNACK;
+import static io.netty.handler.codec.mqtt.MqttMessageType.PINGRESP;
+import static io.netty.handler.codec.mqtt.MqttMessageType.PUBACK;
+import static io.netty.handler.codec.mqtt.MqttMessageType.SUBACK;
+import static io.netty.handler.codec.mqtt.MqttMessageType.UNSUBACK;
+import static io.netty.handler.codec.mqtt.MqttQoS.AT_LEAST_ONCE;
+import static io.netty.handler.codec.mqtt.MqttQoS.AT_MOST_ONCE;
+import static io.netty.handler.codec.mqtt.MqttQoS.FAILURE;
+import static org.thingsboard.server.common.msg.session.MsgType.GET_ATTRIBUTES_REQUEST;
+import static org.thingsboard.server.common.msg.session.MsgType.POST_ATTRIBUTES_REQUEST;
+import static org.thingsboard.server.common.msg.session.MsgType.POST_TELEMETRY_REQUEST;
+import static org.thingsboard.server.common.msg.session.MsgType.SUBSCRIBE_ATTRIBUTES_REQUEST;
+import static org.thingsboard.server.common.msg.session.MsgType.SUBSCRIBE_RPC_COMMANDS_REQUEST;
+import static org.thingsboard.server.common.msg.session.MsgType.TO_DEVICE_RPC_RESPONSE;
+import static org.thingsboard.server.common.msg.session.MsgType.TO_SERVER_RPC_REQUEST;
+import static org.thingsboard.server.common.msg.session.MsgType.UNSUBSCRIBE_ATTRIBUTES_REQUEST;
+import static org.thingsboard.server.common.msg.session.MsgType.UNSUBSCRIBE_RPC_COMMANDS_REQUEST;
+import static org.thingsboard.server.transport.mqtt.MqttTopics.BASE_GATEWAY_API_TOPIC;
+import static org.thingsboard.server.transport.mqtt.MqttTopics.BASE_THING_API_TOPIC;
+import static org.thingsboard.server.transport.mqtt.MqttTopics.DEVICE_ATTRIBUTES_REQUEST_TOPIC_PREFIX;
+import static org.thingsboard.server.transport.mqtt.MqttTopics.DEVICE_ATTRIBUTES_RESPONSES_TOPIC;
+import static org.thingsboard.server.transport.mqtt.MqttTopics.DEVICE_ATTRIBUTES_TOPIC;
+import static org.thingsboard.server.transport.mqtt.MqttTopics.DEVICE_RPC_REQUESTS_SUB_TOPIC;
+import static org.thingsboard.server.transport.mqtt.MqttTopics.DEVICE_RPC_REQUESTS_TOPIC;
+import static org.thingsboard.server.transport.mqtt.MqttTopics.DEVICE_RPC_RESPONSE_SUB_TOPIC;
+import static org.thingsboard.server.transport.mqtt.MqttTopics.DEVICE_RPC_RESPONSE_TOPIC;
+import static org.thingsboard.server.transport.mqtt.MqttTopics.DEVICE_TELEMETRY_TOPIC;
+import static org.thingsboard.server.transport.mqtt.MqttTopics.GATEWAY_ATTRIBUTES_REQUEST_TOPIC;
+import static org.thingsboard.server.transport.mqtt.MqttTopics.GATEWAY_ATTRIBUTES_TOPIC;
+import static org.thingsboard.server.transport.mqtt.MqttTopics.GATEWAY_CONNECT_TOPIC;
+import static org.thingsboard.server.transport.mqtt.MqttTopics.GATEWAY_DISCONNECT_TOPIC;
+import static org.thingsboard.server.transport.mqtt.MqttTopics.GATEWAY_RPC_TOPIC;
+import static org.thingsboard.server.transport.mqtt.MqttTopics.GATEWAY_TELEMETRY_TOPIC;
+import static org.thingsboard.server.transport.mqtt.MqttTopics.THING_TELEMETRY_TOPIC;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.security.cert.X509Certificate;
+
 import org.springframework.util.StringUtils;
 import org.thingsboard.server.common.data.Device;
+import org.thingsboard.server.common.data.security.AssetTokenCredentials;
 import org.thingsboard.server.common.data.security.DeviceTokenCredentials;
 import org.thingsboard.server.common.data.security.DeviceX509Credentials;
 import org.thingsboard.server.common.msg.session.AdaptorToSessionActorMsg;
+import org.thingsboard.server.common.msg.session.BasicToAssetActorSessionMsg;
 import org.thingsboard.server.common.msg.session.BasicToDeviceActorSessionMsg;
 import org.thingsboard.server.common.msg.session.ctrl.SessionCloseMsg;
 import org.thingsboard.server.common.transport.SessionMsgProcessor;
 import org.thingsboard.server.common.transport.adaptor.AdaptorException;
+import org.thingsboard.server.common.transport.auth.AssetAuthService;
 import org.thingsboard.server.common.transport.auth.DeviceAuthService;
 import org.thingsboard.server.dao.EncryptionUtil;
+import org.thingsboard.server.dao.asset.AssetService;
 import org.thingsboard.server.dao.device.DeviceService;
 import org.thingsboard.server.dao.relation.RelationService;
 import org.thingsboard.server.transport.mqtt.adaptors.MqttTransportAdaptor;
-import org.thingsboard.server.transport.mqtt.session.GatewaySessionCtx;
+import org.thingsboard.server.transport.mqtt.session.AssetSessionCtx;
 import org.thingsboard.server.transport.mqtt.session.DeviceSessionCtx;
+import org.thingsboard.server.transport.mqtt.session.GatewaySessionCtx;
 import org.thingsboard.server.transport.mqtt.util.SslUtil;
 
-import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.List;
+import com.fasterxml.jackson.databind.JsonNode;
 
-import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.*;
-import static io.netty.handler.codec.mqtt.MqttMessageType.*;
-import static io.netty.handler.codec.mqtt.MqttQoS.*;
-import static org.thingsboard.server.common.msg.session.MsgType.*;
-import static org.thingsboard.server.transport.mqtt.MqttTopics.*;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.handler.codec.mqtt.MqttConnAckMessage;
+import io.netty.handler.codec.mqtt.MqttConnAckVariableHeader;
+import io.netty.handler.codec.mqtt.MqttConnectMessage;
+import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
+import io.netty.handler.codec.mqtt.MqttFixedHeader;
+import io.netty.handler.codec.mqtt.MqttMessage;
+import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
+import io.netty.handler.codec.mqtt.MqttPubAckMessage;
+import io.netty.handler.codec.mqtt.MqttPublishMessage;
+import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.handler.codec.mqtt.MqttSubAckMessage;
+import io.netty.handler.codec.mqtt.MqttSubAckPayload;
+import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
+import io.netty.handler.codec.mqtt.MqttTopicSubscription;
+import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
+import io.netty.handler.ssl.SslHandler;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author Andrew Shvayka
@@ -63,24 +115,30 @@ public class MqttTransportHandler extends ChannelInboundHandlerAdapter implement
     public static final MqttQoS MAX_SUPPORTED_QOS_LVL = AT_LEAST_ONCE;
 
     private final DeviceSessionCtx deviceSessionCtx;
+    private final AssetSessionCtx assetSessionCtx;
     private final String sessionId;
     private final MqttTransportAdaptor adaptor;
     private final SessionMsgProcessor processor;
     private final DeviceService deviceService;
     private final DeviceAuthService authService;
+    private final AssetService assetService;
+    private final AssetAuthService assetAuthService;
     private final RelationService relationService;
     private final SslHandler sslHandler;
     private volatile boolean connected;
     private volatile GatewaySessionCtx gatewaySessionCtx;
 
-    public MqttTransportHandler(SessionMsgProcessor processor, DeviceService deviceService, DeviceAuthService authService, RelationService relationService,
+    public MqttTransportHandler(SessionMsgProcessor processor, DeviceService deviceService, DeviceAuthService authService, AssetService assetService, AssetAuthService assetAuthService, RelationService relationService,
                                 MqttTransportAdaptor adaptor, SslHandler sslHandler) {
         this.processor = processor;
         this.deviceService = deviceService;
         this.relationService = relationService;
         this.authService = authService;
+        this.assetService = assetService;
+        this.assetAuthService = assetAuthService;
         this.adaptor = adaptor;
         this.deviceSessionCtx = new DeviceSessionCtx(processor, authService, adaptor);
+        this.assetSessionCtx = new AssetSessionCtx(processor, assetAuthService,adaptor);
         this.sessionId = deviceSessionCtx.getSessionId().toUidStr();
         this.sslHandler = sslHandler;
     }
@@ -95,6 +153,8 @@ public class MqttTransportHandler extends ChannelInboundHandlerAdapter implement
 
     private void processMqttMsg(ChannelHandlerContext ctx, MqttMessage msg) {
         deviceSessionCtx.setChannel(ctx);
+        assetSessionCtx.setChannel(ctx);
+        
         switch (msg.fixedHeader().messageType()) {
             case CONNECT:
                 processConnect(ctx, (MqttConnectMessage) msg);
@@ -127,7 +187,7 @@ public class MqttTransportHandler extends ChannelInboundHandlerAdapter implement
         }
         String topicName = mqttMsg.variableHeader().topicName();
         int msgId = mqttMsg.variableHeader().messageId();
-        log.trace("[{}] Processing publish msg [{}][{}]!", sessionId, topicName, msgId);
+        log.info("[{}] Processing publish msg [{}][{}]!", sessionId, topicName, msgId);
 
         if (topicName.startsWith(BASE_GATEWAY_API_TOPIC)) {
             if (gatewaySessionCtx != null) {
@@ -150,6 +210,8 @@ public class MqttTransportHandler extends ChannelInboundHandlerAdapter implement
                     log.warn("[{}] Failed to process publish msg [{}][{}]", sessionId, topicName, msgId, e);
                 }
             }
+        } else if (topicName.startsWith(BASE_THING_API_TOPIC)) {
+            processAssetPublish(ctx, mqttMsg, topicName, msgId);
         } else {
             processDevicePublish(ctx, mqttMsg, topicName, msgId);
         }
@@ -188,6 +250,40 @@ public class MqttTransportHandler extends ChannelInboundHandlerAdapter implement
             ctx.close();
         }
     }
+    
+    private void processAssetPublish(ChannelHandlerContext ctx, MqttPublishMessage mqttMsg, String topicName, int msgId) {
+      AdaptorToSessionActorMsg msg = null;
+      try {
+          if (topicName.equals(THING_TELEMETRY_TOPIC)) {
+              msg = adaptor.convertToActorMsg(assetSessionCtx, POST_TELEMETRY_REQUEST, mqttMsg);
+          } else if (topicName.equals(DEVICE_ATTRIBUTES_TOPIC)) {
+              msg = adaptor.convertToActorMsg(assetSessionCtx, POST_ATTRIBUTES_REQUEST, mqttMsg);
+          } else if (topicName.startsWith(DEVICE_ATTRIBUTES_REQUEST_TOPIC_PREFIX)) {
+              msg = adaptor.convertToActorMsg(assetSessionCtx, GET_ATTRIBUTES_REQUEST, mqttMsg);
+              if (msgId >= 0) {
+                  ctx.writeAndFlush(createMqttPubAckMsg(msgId));
+              }
+          } else if (topicName.startsWith(DEVICE_RPC_RESPONSE_TOPIC)) {
+              msg = adaptor.convertToActorMsg(assetSessionCtx, TO_DEVICE_RPC_RESPONSE, mqttMsg);
+              if (msgId >= 0) {
+                  ctx.writeAndFlush(createMqttPubAckMsg(msgId));
+              }
+          } else if (topicName.startsWith(DEVICE_RPC_REQUESTS_TOPIC)) {
+              msg = adaptor.convertToActorMsg(assetSessionCtx, TO_SERVER_RPC_REQUEST, mqttMsg);
+              if (msgId >= 0) {
+                  ctx.writeAndFlush(createMqttPubAckMsg(msgId));
+              }
+          }
+      } catch (AdaptorException e) {
+          log.warn("[{}] Failed to process publish msg [{}][{}]", sessionId, topicName, msgId, e);
+      }
+      if (msg != null) {
+          processor.process(new BasicToAssetActorSessionMsg(assetSessionCtx.getAsset(), msg));
+      } else {
+          log.info("[{}] Closing current session due to invalid publish msg [{}][{}]", sessionId, topicName, msgId);
+          ctx.close();
+      }
+  }
 
     private void processSubscribe(ChannelHandlerContext ctx, MqttSubscribeMessage mqttMsg) {
         if (!checkConnected(ctx)) {
@@ -270,14 +366,32 @@ public class MqttTransportHandler extends ChannelInboundHandlerAdapter implement
         if (StringUtils.isEmpty(userName)) {
             ctx.writeAndFlush(createMqttConnAckMsg(CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD));
             ctx.close();
-        } else if (!deviceSessionCtx.login(new DeviceTokenCredentials(msg.payload().userName()))) {
-            ctx.writeAndFlush(createMqttConnAckMsg(CONNECTION_REFUSED_NOT_AUTHORIZED));
-            ctx.close();
         } else {
-            ctx.writeAndFlush(createMqttConnAckMsg(CONNECTION_ACCEPTED));
-            connected = true;
-            checkGatewaySession();
+          String clientIdentifier = msg.payload().clientIdentifier();
+          if(clientIdentifier != null && clientIdentifier.startsWith("a:")) {
+            //asset
+            boolean login = assetSessionCtx.login(new AssetTokenCredentials(userName));
+            if (!login) {
+              ctx.writeAndFlush(createMqttConnAckMsg(CONNECTION_REFUSED_NOT_AUTHORIZED));
+              ctx.close();
+            } else {
+                ctx.writeAndFlush(createMqttConnAckMsg(CONNECTION_ACCEPTED));
+                connected = true;
+            }
+          } else {
+            //device
+            boolean login = deviceSessionCtx.login(new DeviceTokenCredentials(userName));
+            if (!login) {
+              ctx.writeAndFlush(createMqttConnAckMsg(CONNECTION_REFUSED_NOT_AUTHORIZED));
+              ctx.close();
+            } else {
+                ctx.writeAndFlush(createMqttConnAckMsg(CONNECTION_ACCEPTED));
+                connected = true;
+                checkGatewaySession();
+            }
+          }
         }
+        
     }
 
     private void processX509CertConnect(ChannelHandlerContext ctx, X509Certificate cert) {
@@ -314,6 +428,7 @@ public class MqttTransportHandler extends ChannelInboundHandlerAdapter implement
     private void processDisconnect(ChannelHandlerContext ctx) {
         ctx.close();
         processor.process(SessionCloseMsg.onDisconnect(deviceSessionCtx.getSessionId()));
+        processor.process(SessionCloseMsg.onDisconnect(assetSessionCtx.getSessionId()));
         if (gatewaySessionCtx != null) {
             gatewaySessionCtx.onGatewayDisconnect();
         }

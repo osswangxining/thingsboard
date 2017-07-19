@@ -15,11 +15,11 @@
  */
 package org.thingsboard.server.actors.service;
 
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import akka.actor.Props;
-import akka.actor.Terminated;
-import lombok.extern.slf4j.Slf4j;
+import java.util.Optional;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.thingsboard.server.actors.ActorSystemContext;
@@ -30,6 +30,7 @@ import org.thingsboard.server.actors.rpc.RpcSessionCreateRequestMsg;
 import org.thingsboard.server.actors.rpc.RpcSessionTellMsg;
 import org.thingsboard.server.actors.session.SessionManagerActor;
 import org.thingsboard.server.actors.stats.StatsActor;
+import org.thingsboard.server.common.data.id.AssetId;
 import org.thingsboard.server.common.data.id.DeviceId;
 import org.thingsboard.server.common.data.id.PluginId;
 import org.thingsboard.server.common.data.id.RuleId;
@@ -40,10 +41,12 @@ import org.thingsboard.server.common.msg.cluster.ClusterEventMsg;
 import org.thingsboard.server.common.msg.cluster.ServerAddress;
 import org.thingsboard.server.common.msg.cluster.ToAllNodesMsg;
 import org.thingsboard.server.common.msg.core.ToDeviceSessionActorMsg;
-import org.thingsboard.server.extensions.api.device.DeviceNameOrTypeUpdateMsg;
 import org.thingsboard.server.common.msg.device.ToDeviceActorMsg;
 import org.thingsboard.server.common.msg.plugin.ComponentLifecycleMsg;
+import org.thingsboard.server.extensions.api.asset.AssetCredentialsUpdateNotificationMsg;
+import org.thingsboard.server.extensions.api.asset.ToAssetActorNotificationMsg;
 import org.thingsboard.server.extensions.api.device.DeviceCredentialsUpdateNotificationMsg;
+import org.thingsboard.server.extensions.api.device.DeviceNameOrTypeUpdateMsg;
 import org.thingsboard.server.extensions.api.device.ToDeviceActorNotificationMsg;
 import org.thingsboard.server.extensions.api.plugins.msg.ToPluginActorMsg;
 import org.thingsboard.server.extensions.api.plugins.rest.PluginRestMsg;
@@ -51,13 +54,15 @@ import org.thingsboard.server.extensions.api.plugins.ws.msg.PluginWebsocketMsg;
 import org.thingsboard.server.service.cluster.discovery.DiscoveryService;
 import org.thingsboard.server.service.cluster.discovery.ServerInstance;
 import org.thingsboard.server.service.cluster.rpc.ClusterRpcService;
+
+import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
+import akka.actor.Props;
+import akka.actor.Terminated;
+import lombok.extern.slf4j.Slf4j;
 import scala.concurrent.Await;
 import scala.concurrent.Future;
 import scala.concurrent.duration.Duration;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import java.util.Optional;
 
 @Service
 @Slf4j
@@ -167,6 +172,12 @@ public class DefaultActorService implements ActorService {
     }
 
     @Override
+    public void onMsg(ToAssetActorNotificationMsg msg) {
+        log.trace("Processing notification rpc msg: {}", msg);
+        appActor.tell(msg, ActorRef.noSender());
+    }
+    
+    @Override
     public void onMsg(ToDeviceSessionActorMsg msg) {
         log.trace("Processing session rpc msg: {}", msg);
         sessionManagerActor.tell(msg, ActorRef.noSender());
@@ -236,6 +247,17 @@ public class DefaultActorService implements ActorService {
         }
     }
 
+    @Override
+    public void onCredentialsUpdate(TenantId tenantId, AssetId assetId) {
+        AssetCredentialsUpdateNotificationMsg msg = new AssetCredentialsUpdateNotificationMsg(tenantId, assetId);
+        Optional<ServerAddress> address = actorContext.getRoutingService().resolveById(assetId);
+        if (address.isPresent()) {
+            rpcService.tell(address.get(), msg);
+        } else {
+            onMsg(msg);
+        }
+    }
+    
     @Override
     public void onDeviceNameOrTypeUpdate(TenantId tenantId, DeviceId deviceId, String deviceName, String deviceType) {
         log.trace("[{}] Processing onDeviceNameOrTypeUpdate event, deviceName: {}, deviceType: {}", deviceId, deviceName, deviceType);

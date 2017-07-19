@@ -16,25 +16,30 @@
 package org.thingsboard.server.actors.tenant;
 
 import org.thingsboard.server.actors.rule.RuleActorChain;
+import org.thingsboard.server.common.msg.asset.ToAssetActorMsg;
 import org.thingsboard.server.common.msg.device.ToDeviceActorMsg;
 
 public class RuleChainDeviceMsg {
 
-    private final ToDeviceActorMsg toDeviceActorMsg;
-    private final RuleActorChain ruleChain;
+  private final ToDeviceActorMsg toDeviceActorMsg;
+  private final ToAssetActorMsg toAssetActorMsg;
+  private final RuleActorChain ruleChain;
 
-    public RuleChainDeviceMsg(ToDeviceActorMsg toDeviceActorMsg, RuleActorChain ruleChain) {
-        super();
-        this.toDeviceActorMsg = toDeviceActorMsg;
-        this.ruleChain = ruleChain;
-    }
+  public RuleChainDeviceMsg(ToDeviceActorMsg toDeviceActorMsg, ToAssetActorMsg toAssetActorMsg, RuleActorChain ruleChain) {
+    super();
+    this.toDeviceActorMsg = toDeviceActorMsg;
+    this.toAssetActorMsg = toAssetActorMsg;
+    this.ruleChain = ruleChain;
+  }
 
-    public ToDeviceActorMsg getToDeviceActorMsg() {
-        return toDeviceActorMsg;
-    }
-
-    public RuleActorChain getRuleChain() {
-        return ruleChain;
-    }
+  public ToDeviceActorMsg getToDeviceActorMsg() {
+    return toDeviceActorMsg;
+  }
+  public ToAssetActorMsg getToAssetActorMsg() {
+    return toAssetActorMsg;
+  } 
+  public RuleActorChain getRuleChain() {
+    return ruleChain;
+  }
 
 }

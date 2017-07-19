@@ -29,9 +29,17 @@ export default function AssetDirective($compile, $templateCache, toast, $transla
         scope.isAssignedToCustomer = false;
         scope.isPublic = false;
         scope.assignedCustomer = null;
+        scope.assetCredentials = null;
 
         scope.$watch('asset', function(newVal) {
             if (newVal) {
+                if (scope.asset.id) {
+                    assetService.getAssetCredentials(scope.asset.id.id).then(
+                        function success(credentials) {
+                            scope.assetCredentials = credentials;
+                        }
+                    );
+                }
                 if (scope.asset.customerId && scope.asset.customerId.id !== types.id.nullUid) {
                     scope.isAssignedToCustomer = true;
                     customerService.getShortCustomerInfo(scope.asset.customerId.id).then(
@@ -51,7 +59,9 @@ export default function AssetDirective($compile, $templateCache, toast, $transla
         scope.onAssetIdCopied = function() {
             toast.showSuccess($translate.instant('asset.idCopiedMessage'), 750, angular.element(element).parent().parent(), 'bottom left');
         };
-
+        scope.onAccessTokenCopied = function() {
+            toast.showSuccess($translate.instant('asset.accessTokenCopiedMessage'), 750, angular.element(element).parent().parent(), 'bottom left');
+        };
 
         $compile(element.contents())(scope);
     }
@@ -66,6 +76,7 @@ export default function AssetDirective($compile, $templateCache, toast, $transla
             onAssignToCustomer: '&',
             onMakePublic: '&',
             onUnassignFromCustomer: '&',
+            onManageCredentials: '&',
             onDeleteAsset: '&'
         }
     };

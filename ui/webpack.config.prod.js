@@ -47,7 +47,7 @@ module.exports = {
         new HtmlWebpackPlugin({
             template: './src/index.html',
             filename: '../index.html',
-            title: 'Thingsboard',
+            title: 'IoT Platform',
             inject: 'body',
         }),
         new webpack.optimize.OccurrenceOrderPlugin(),

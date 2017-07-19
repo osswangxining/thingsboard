@@ -36,6 +36,7 @@ public class ModelConstants {
     public static final String TENANT_ID_PROPERTY = "tenant_id";
     public static final String CUSTOMER_ID_PROPERTY = "customer_id";
     public static final String DEVICE_ID_PROPERTY = "device_id";
+    public static final String ASSET_ID_PROPERTY = "asset_id";
     public static final String TITLE_PROPERTY = "title";
     public static final String ALIAS_PROPERTY = "alias";
     public static final String SEARCH_TEXT_PROPERTY = "search_text";
@@ -132,6 +133,24 @@ public class ModelConstants {
     public static final String DEVICE_TYPES_BY_TENANT_VIEW_NAME = "device_types_by_tenant";
 
     /**
+     * Cassandra deviceType constants.
+     */
+    public static final String DEVICE_TYPE_COLUMN_FAMILY_NAME = "device_type";
+    public static final String DEVICE_TYPE_TENANT_ID_PROPERTY = TENANT_ID_PROPERTY;
+    public static final String DEVICE_TYPE_CUSTOMER_ID_PROPERTY = CUSTOMER_ID_PROPERTY;
+    public static final String DEVICE_TYPE_NAME_PROPERTY = "name";
+    public static final String DEVICE_TYPE_TYPE_PROPERTY = "type";
+    public static final String DEVICE_TYPE_ADDITIONAL_INFO_PROPERTY = ADDITIONAL_INFO_PROPERTY;
+
+    public static final String DEVICE_TYPE_BY_TENANT_AND_SEARCH_TEXT_COLUMN_FAMILY_NAME = "device_type_by_tenant_and_search_text";
+    public static final String DEVICE_TYPE_BY_TENANT_BY_TYPE_AND_SEARCH_TEXT_COLUMN_FAMILY_NAME = "device_by_tenant_by_type_and_search_text";
+    public static final String DEVICE_TYPE_BY_CUSTOMER_AND_SEARCH_TEXT_COLUMN_FAMILY_NAME = "device_by_customer_and_search_text";
+    public static final String DEVICE_TYPE_BY_CUSTOMER_BY_TYPE_AND_SEARCH_TEXT_COLUMN_FAMILY_NAME = "device_by_customer_by_type_and_search_text";
+    public static final String DEVICE_TYPE_BY_TENANT_AND_NAME_VIEW_NAME = "device_by_tenant_and_name";
+    public static final String DEVICE_TYPE_TYPES_BY_TENANT_VIEW_NAME = "device_types_by_tenant";
+
+    
+    /**
      * Cassandra asset constants.
      */
     public static final String ASSET_COLUMN_FAMILY_NAME = "asset";
@@ -180,6 +199,18 @@ public class ModelConstants {
 
     public static final String RELATION_BY_TYPE_AND_CHILD_TYPE_VIEW_NAME = "relation_by_type_and_child_type";
     public static final String RELATION_REVERSE_VIEW_NAME = "reverse_relation";
+
+    /**
+     * Cassandra asset_credentials constants.
+     */
+    public static final String ASSET_CREDENTIALS_COLUMN_FAMILY_NAME = "asset_credentials";
+    public static final String ASSET_CREDENTIALS_ASSET_ID_PROPERTY = ASSET_ID_PROPERTY;
+    public static final String ASSET_CREDENTIALS_CREDENTIALS_TYPE_PROPERTY = "credentials_type";
+    public static final String ASSET_CREDENTIALS_CREDENTIALS_ID_PROPERTY = "credentials_id";
+    public static final String ASSET_CREDENTIALS_CREDENTIALS_VALUE_PROPERTY = "credentials_value";
+
+    public static final String ASSET_CREDENTIALS_BY_ASSET_COLUMN_FAMILY_NAME = "asset_credentials_by_asset";
+    public static final String ASSET_CREDENTIALS_BY_CREDENTIALS_ID_COLUMN_FAMILY_NAME = "asset_credentials_by_credentials_id";
 
 
     /**

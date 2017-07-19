@@ -44,7 +44,8 @@ public abstract class BasicJsFilter implements RuleFilter<JsFilterConfiguration>
             return doFilter(ctx, msg);
         } catch (ScriptException e) {
             log.warn("RuleFilter evaluation exception: {}", e.getMessage(), e);
-            throw new RuntimeException(e);
+            //throw new RuntimeException(e);
+            return false;
         }
     }
 

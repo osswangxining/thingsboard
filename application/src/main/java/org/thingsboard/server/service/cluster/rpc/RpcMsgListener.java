@@ -21,10 +21,9 @@ import org.thingsboard.server.actors.rpc.RpcSessionTellMsg;
 import org.thingsboard.server.common.msg.cluster.ToAllNodesMsg;
 import org.thingsboard.server.common.msg.core.ToDeviceSessionActorMsg;
 import org.thingsboard.server.common.msg.device.ToDeviceActorMsg;
+import org.thingsboard.server.extensions.api.asset.ToAssetActorNotificationMsg;
 import org.thingsboard.server.extensions.api.device.ToDeviceActorNotificationMsg;
 import org.thingsboard.server.extensions.api.plugins.msg.ToPluginActorMsg;
-import org.thingsboard.server.extensions.api.plugins.rpc.PluginRpcMsg;
-import org.thingsboard.server.gen.cluster.ClusterAPIProtos;
 
 /**
  * @author Andrew Shvayka
@@ -34,6 +33,8 @@ public interface RpcMsgListener {
     void onMsg(ToDeviceActorMsg msg);
 
     void onMsg(ToDeviceActorNotificationMsg msg);
+    
+    void onMsg(ToAssetActorNotificationMsg msg);
 
     void onMsg(ToDeviceSessionActorMsg msg);
 

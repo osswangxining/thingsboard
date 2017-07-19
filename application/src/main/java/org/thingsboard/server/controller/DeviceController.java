@@ -21,6 +21,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.thingsboard.server.common.data.Customer;
 import org.thingsboard.server.common.data.Device;
+import org.thingsboard.server.common.data.DeviceType;
 import org.thingsboard.server.common.data.TenantDeviceType;
 import org.thingsboard.server.common.data.id.CustomerId;
 import org.thingsboard.server.common.data.id.DeviceId;
@@ -287,8 +288,24 @@ public class DeviceController extends BaseController {
         try {
             SecurityUser user = getCurrentUser();
             TenantId tenantId = user.getTenantId();
-            ListenableFuture<List<TenantDeviceType>> deviceTypes = deviceService.findDeviceTypesByTenantId(tenantId);
-            return checkNotNull(deviceTypes.get());
+            int limit = 1000; //by default
+            TextPageLink pageLink = createPageLink(limit, null, null, null);
+            TextPageData<DeviceType> findDevicesByTenantId = deviceTypeService.findDevicesByTenantId(tenantId, pageLink);
+            List<TenantDeviceType> result = new ArrayList<TenantDeviceType>();
+            if(findDevicesByTenantId != null) {
+              List<DeviceType> deviceTypes = findDevicesByTenantId.getData();
+              if(deviceTypes != null) {
+                for (DeviceType deviceType : deviceTypes) {
+                  TenantDeviceType t = new TenantDeviceType();
+                  t.setTenantId(tenantId);
+                  t.setType(deviceType.getName());
+                  result.add(t);
+                }
+              }
+            }
+            return result;
+//            ListenableFuture<List<TenantDeviceType>> deviceTypes = deviceService.findDeviceTypesByTenantId(tenantId);
+//            return checkNotNull(deviceTypes.get());
         } catch (Exception e) {
             throw handleException(e);
         }

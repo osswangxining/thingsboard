@@ -42,6 +42,10 @@ public class LongDataEntry extends BasicKvEntry {
         return value;
     }
 
+    public Long getAdd(long b) {
+      return value.longValue() + b;
+    }
+    
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

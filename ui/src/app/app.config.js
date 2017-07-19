@@ -15,10 +15,10 @@
  */
 import injectTapEventPlugin from 'react-tap-event-plugin';
 import UrlHandler from './url.handler';
-import addLocaleKorean from './locale/locale.constant-ko';
+//import addLocaleKorean from './locale/locale.constant-ko';
 import addLocaleChinese from './locale/locale.constant-zh';
-import addLocaleRussian from './locale/locale.constant-ru';
-import addLocaleSpanish from './locale/locale.constant-es';
+//import addLocaleRussian from './locale/locale.constant-ru';
+//import addLocaleSpanish from './locale/locale.constant-es';
 
 /* eslint-disable import/no-unresolved, import/default */
 
@@ -26,7 +26,7 @@ import mdiIconSet from '../svg/mdi.svg';
 
 /* eslint-enable import/no-unresolved, import/default */
 
-const PRIMARY_BACKGROUND_COLOR = "#305680";//#2856b6";//"#3f51b5";
+const PRIMARY_BACKGROUND_COLOR = "#305680";//#2856b6";//"#3f51b5";//"#305680"
 const SECONDARY_BACKGROUND_COLOR = "#527dad";
 const HUE3_COLOR = "#a7c1de";
 
@@ -52,10 +52,10 @@ export default function AppConfig($provide,
     $translateProvider.useMissingTranslationHandler('tbMissingTranslationHandler');
     $translateProvider.addInterpolation('$translateMessageFormatInterpolation');
 
-    addLocaleKorean(locales);
+    //addLocaleKorean(locales);
     addLocaleChinese(locales);
-    addLocaleRussian(locales);
-    addLocaleSpanish(locales);
+    //addLocaleRussian(locales);
+    //addLocaleSpanish(locales);
 
     var $window = angular.injector(['ng']).get('$window');
     var lang = $window.navigator.language || $window.navigator.userLanguage;
@@ -153,7 +153,7 @@ export default function AppConfig($provide,
     function configureTheme() {
 
         var theme = 'indigo';
-
+        //var theme = 'blueGray';
         if (theme === 'blueGray') {
             blueGrayTheme();
         } else {

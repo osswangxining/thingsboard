@@ -16,11 +16,22 @@
 package org.thingsboard.server.dao.asset;
 
 
-import com.google.common.base.Function;
-import com.google.common.util.concurrent.AsyncFunction;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import lombok.extern.slf4j.Slf4j;
+import static org.thingsboard.server.dao.DaoUtil.toUUIDs;
+import static org.thingsboard.server.dao.model.ModelConstants.NULL_UUID;
+import static org.thingsboard.server.dao.service.Validator.validateId;
+import static org.thingsboard.server.dao.service.Validator.validateIds;
+import static org.thingsboard.server.dao.service.Validator.validatePageLink;
+import static org.thingsboard.server.dao.service.Validator.validateString;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import javax.annotation.Nullable;
+
+import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -36,6 +47,9 @@ import org.thingsboard.server.common.data.id.TenantId;
 import org.thingsboard.server.common.data.page.TextPageData;
 import org.thingsboard.server.common.data.page.TextPageLink;
 import org.thingsboard.server.common.data.relation.EntityRelation;
+import org.thingsboard.server.common.data.security.AssetCredentials;
+import org.thingsboard.server.common.data.security.AssetCredentialsType;
+import org.thingsboard.server.common.data.security.DeviceCredentials;
 import org.thingsboard.server.dao.customer.CustomerDao;
 import org.thingsboard.server.dao.entity.AbstractEntityService;
 import org.thingsboard.server.dao.exception.DataValidationException;
@@ -44,16 +58,12 @@ import org.thingsboard.server.dao.service.DataValidator;
 import org.thingsboard.server.dao.service.PaginatedRemover;
 import org.thingsboard.server.dao.tenant.TenantDao;
 
-import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import com.google.common.base.Function;
+import com.google.common.util.concurrent.AsyncFunction;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 
-import static org.thingsboard.server.dao.DaoUtil.*;
-import static org.thingsboard.server.dao.model.ModelConstants.NULL_UUID;
-import static org.thingsboard.server.dao.service.Validator.*;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
@@ -67,6 +77,9 @@ public class BaseAssetService extends AbstractEntityService implements AssetServ
 
     @Autowired
     private CustomerDao customerDao;
+
+    @Autowired
+    private AssetCredentialsService assetCredentialsService;
 
     @Override
     public Asset findAssetById(AssetId assetId) {
@@ -93,7 +106,15 @@ public class BaseAssetService extends AbstractEntityService implements AssetServ
     public Asset saveAsset(Asset asset) {
         log.trace("Executing saveAsset [{}]", asset);
         assetValidator.validate(asset);
-        return assetDao.save(asset);
+        Asset savedAsset = assetDao.save(asset);
+        if (asset.getId() == null) {
+          AssetCredentials assetCredentials = new AssetCredentials();
+          assetCredentials.setAssetId(new AssetId(savedAsset.getUuidId()));
+          assetCredentials.setCredentialsType(AssetCredentialsType.ACCESS_TOKEN);
+          assetCredentials.setCredentialsId(RandomStringUtils.randomAlphanumeric(20));
+          assetCredentialsService.createAssetCredentials(assetCredentials);
+      }
+      return savedAsset;
     }
 
     @Override
@@ -114,6 +135,10 @@ public class BaseAssetService extends AbstractEntityService implements AssetServ
     public void deleteAsset(AssetId assetId) {
         log.trace("Executing deleteAsset [{}]", assetId);
         validateId(assetId, "Incorrect assetId " + assetId);
+        AssetCredentials assetCredentials = assetCredentialsService.findAssetCredentialsByAssetId(assetId);
+        if (assetCredentials != null) {
+            assetCredentialsService.deleteAssetCredentials(assetCredentials);
+        }
         deleteEntityRelations(assetId);
         assetDao.removeById(assetId.getId());
     }

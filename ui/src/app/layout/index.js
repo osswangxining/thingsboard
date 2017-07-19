@@ -22,6 +22,7 @@ import 'angular-breadcrumb';
 
 import thingsboardMenu from '../services/menu.service';
 import thingsboardApiDevice from '../api/device.service';
+import thingsboardApiDeviceType from '../api/devicetype.service';
 import thingsboardApiLogin from '../api/login.service';
 import thingsboardApiUser from '../api/user.service';
 
@@ -43,6 +44,7 @@ import thingsboardAdmin from '../admin';
 import thingsboardProfile from '../profile';
 import thingsboardAsset from '../asset';
 import thingsboardDevice from '../device';
+import thingsboardDeviceType from '../devicetype';
 import thingsboardWidgetLibrary from '../widget';
 import thingsboardDashboard from '../dashboard';
 import thingsboardPlugin from '../plugin';
@@ -73,12 +75,14 @@ export default angular.module('thingsboard.home', [
     thingsboardProfile,
     thingsboardAsset,
     thingsboardDevice,
+    thingsboardDeviceType,
     thingsboardWidgetLibrary,
     thingsboardDashboard,
     thingsboardPlugin,
     thingsboardRule,
     thingsboardJsonForm,
     thingsboardApiDevice,
+    thingsboardApiDeviceType,
     thingsboardApiLogin,
     thingsboardApiUser,
     thingsboardNoAnimate,

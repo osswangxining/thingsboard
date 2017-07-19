@@ -25,7 +25,7 @@ import logoSvg from '../../svg/logo_title_white.svg';
 /* eslint-disable angular/angularelement */
 
 /*@ngInject*/
-export default function HomeController(types, loginService, userService, deviceService, Fullscreen, $scope, $element, $rootScope, $document, $state,
+export default function HomeController(types, loginService, userService, deviceService, deviceTypeService, Fullscreen, $scope, $element, $rootScope, $document, $state,
                                        $window, $log, $mdMedia, $animate, $timeout) {
 
     var siteSideNav = $('.tb-site-sidenav', $element);

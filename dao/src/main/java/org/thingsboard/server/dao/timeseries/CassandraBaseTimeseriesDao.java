@@ -244,7 +244,7 @@ public class CassandraBaseTimeseriesDao extends CassandraAbstractAsyncDao implem
         stmt.setString(0, entityId.getEntityType().name());
         stmt.setUUID(1, entityId.getId());
         stmt.setString(2, key);
-        log.debug("Generated query [{}] for entityType {} and entityId {}", stmt, entityId.getEntityType(), entityId.getId());
+        log.info("Generated query [{}] for entityType {} and entityId {}", stmt, entityId.getEntityType(), entityId.getId());
         return getFuture(executeAsyncRead(stmt), rs -> convertResultToTsKvEntry(rs.one()));
     }
 

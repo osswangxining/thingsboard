@@ -15,19 +15,44 @@
  */
 package org.thingsboard.server.controller;
 
-import lombok.extern.slf4j.Slf4j;
+import static org.thingsboard.server.dao.service.Validator.validateId;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import javax.mail.MessagingException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.thingsboard.server.actors.service.ActorService;
-import org.thingsboard.server.common.data.*;
+import org.thingsboard.server.common.data.Customer;
+import org.thingsboard.server.common.data.Dashboard;
+import org.thingsboard.server.common.data.DashboardInfo;
+import org.thingsboard.server.common.data.Device;
+import org.thingsboard.server.common.data.DeviceType;
+import org.thingsboard.server.common.data.User;
 import org.thingsboard.server.common.data.alarm.Alarm;
 import org.thingsboard.server.common.data.alarm.AlarmId;
 import org.thingsboard.server.common.data.alarm.AlarmInfo;
 import org.thingsboard.server.common.data.asset.Asset;
-import org.thingsboard.server.common.data.id.*;
+import org.thingsboard.server.common.data.id.AssetId;
+import org.thingsboard.server.common.data.id.CustomerId;
+import org.thingsboard.server.common.data.id.DashboardId;
+import org.thingsboard.server.common.data.id.DeviceId;
+import org.thingsboard.server.common.data.id.DeviceTypeId;
+import org.thingsboard.server.common.data.id.EntityId;
+import org.thingsboard.server.common.data.id.PluginId;
+import org.thingsboard.server.common.data.id.RuleId;
+import org.thingsboard.server.common.data.id.TenantId;
+import org.thingsboard.server.common.data.id.UserId;
+import org.thingsboard.server.common.data.id.WidgetTypeId;
+import org.thingsboard.server.common.data.id.WidgetsBundleId;
 import org.thingsboard.server.common.data.page.TextPageLink;
 import org.thingsboard.server.common.data.page.TimePageLink;
 import org.thingsboard.server.common.data.plugin.ComponentDescriptor;
@@ -38,11 +63,13 @@ import org.thingsboard.server.common.data.security.Authority;
 import org.thingsboard.server.common.data.widget.WidgetType;
 import org.thingsboard.server.common.data.widget.WidgetsBundle;
 import org.thingsboard.server.dao.alarm.AlarmService;
+import org.thingsboard.server.dao.asset.AssetCredentialsService;
 import org.thingsboard.server.dao.asset.AssetService;
 import org.thingsboard.server.dao.customer.CustomerService;
 import org.thingsboard.server.dao.dashboard.DashboardService;
 import org.thingsboard.server.dao.device.DeviceCredentialsService;
 import org.thingsboard.server.dao.device.DeviceService;
+import org.thingsboard.server.dao.devicetype.DeviceTypeService;
 import org.thingsboard.server.dao.exception.DataValidationException;
 import org.thingsboard.server.dao.exception.IncorrectParameterException;
 import org.thingsboard.server.dao.model.ModelConstants;
@@ -58,14 +85,7 @@ import org.thingsboard.server.exception.ThingsboardException;
 import org.thingsboard.server.service.component.ComponentDiscoveryService;
 import org.thingsboard.server.service.security.model.SecurityUser;
 
-import javax.mail.MessagingException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.thingsboard.server.dao.service.Validator.validateId;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public abstract class BaseController {
@@ -81,6 +101,9 @@ public abstract class BaseController {
 
     @Autowired
     protected DeviceService deviceService;
+    
+    @Autowired
+    protected DeviceTypeService deviceTypeService;
 
     @Autowired
     protected AssetService assetService;
@@ -90,6 +113,9 @@ public abstract class BaseController {
 
     @Autowired
     protected DeviceCredentialsService deviceCredentialsService;
+
+    @Autowired
+    protected AssetCredentialsService assetCredentialsService;
 
     @Autowired
     protected WidgetsBundleService widgetsBundleService;
@@ -311,7 +337,27 @@ public abstract class BaseController {
             throw handleException(e, false);
         }
     }
+    
+    DeviceType checkDeviceTypeId(DeviceTypeId deviceId) throws ThingsboardException {
+      try {
+          validateId(deviceId, "Incorrect deviceId " + deviceId);
 
+          DeviceType deviceType = deviceTypeService.findDeviceById(deviceId);
+          checkDeviceType(deviceType);
+          return deviceType;
+      } catch (Exception e) {
+          throw handleException(e, false);
+      }
+  }
+
+    protected void checkDeviceType(DeviceType deviceType) throws ThingsboardException {
+      checkNotNull(deviceType);
+      checkTenantId(deviceType.getTenantId());
+      if (deviceType.getCustomerId() != null && !deviceType.getCustomerId().getId().equals(ModelConstants.NULL_UUID)) {
+          checkCustomerId(deviceType.getCustomerId());
+      }
+  }
+    
     protected void checkDevice(Device device) throws ThingsboardException {
         checkNotNull(device);
         checkTenantId(device.getTenantId());

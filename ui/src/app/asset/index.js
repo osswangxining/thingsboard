@@ -23,6 +23,7 @@ import AssetRoutes from './asset.routes';
 import {AssetController, AssetCardController} from './asset.controller';
 import AssignAssetToCustomerController from './assign-to-customer.controller';
 import AddAssetsToCustomerController from './add-assets-to-customer.controller';
+import ManageAssetCredentialsController from './asset-credentials.controller';
 import AssetDirective from './asset.directive';
 
 export default angular.module('thingsboard.asset', [
@@ -37,5 +38,6 @@ export default angular.module('thingsboard.asset', [
     .controller('AssetCardController', AssetCardController)
     .controller('AssignAssetToCustomerController', AssignAssetToCustomerController)
     .controller('AddAssetsToCustomerController', AddAssetsToCustomerController)
+    .controller('ManageAssetCredentialsController', ManageAssetCredentialsController)
     .directive('tbAsset', AssetDirective)
     .name;

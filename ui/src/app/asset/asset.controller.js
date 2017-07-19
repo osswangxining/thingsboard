@@ -19,6 +19,7 @@ import addAssetTemplate from './add-asset.tpl.html';
 import assetCard from './asset-card.tpl.html';
 import assignToCustomerTemplate from './assign-to-customer.tpl.html';
 import addAssetsToCustomerTemplate from './add-assets-to-customer.tpl.html';
+import assetCredentialsTemplate from './asset-credentials.tpl.html';
 
 /* eslint-enable import/no-unresolved, import/default */
 
@@ -104,6 +105,8 @@ export function AssetController($rootScope, userService, assetService, customerS
     vm.assignToCustomer = assignToCustomer;
     vm.makePublic = makePublic;
     vm.unassignFromCustomer = unassignFromCustomer;
+    
+    vm.manageCredentials = manageCredentials;
 
     initController();
 
@@ -195,6 +198,17 @@ export function AssetController($rootScope, userService, assetService, customerS
             assetActionsList.push(
                 {
                     onAction: function ($event, item) {
+                        manageCredentials($event, item);
+                    },
+                    name: function() { return $translate.instant('asset.credentials') },
+                    details: function() { return $translate.instant('asset.manage-credentials') },
+                    icon: "security"
+                }
+            );
+        
+            assetActionsList.push(
+                {
+                    onAction: function ($event, item) {
                         vm.grid.deleteItem($event, item);
                     },
                     name: function() { return $translate.instant('action.delete') },
@@ -267,6 +281,17 @@ export function AssetController($rootScope, userService, assetService, customerS
                         }
                     }
                 );
+                
+                assetActionsList.push(
+                    {
+                        onAction: function ($event, item) {
+                            manageCredentials($event, item);
+                        },
+                        name: function() { return $translate.instant('asset.credentials') },
+                        details: function() { return $translate.instant('asset.manage-credentials') },
+                        icon: "security"
+                    }
+                );
 
                 assetGroupActionsList.push(
                     {
@@ -292,6 +317,16 @@ export function AssetController($rootScope, userService, assetService, customerS
 
 
             } else if (vm.assetsScope === 'customer_user') {
+                assetActionsList.push(
+                    {
+                        onAction: function ($event, item) {
+                            manageCredentials($event, item);
+                        },
+                        name: function() { return $translate.instant('asset.credentials') },
+                        details: function() { return $translate.instant('asset.manage-credentials') },
+                        icon: "security"
+                    }
+                );
                 vm.assetGridConfig.addItemAction = {};
             }
         }
@@ -503,6 +538,23 @@ export function AssetController($rootScope, userService, assetService, customerS
             assetService.makeAssetPublic(asset.id.id).then(function success() {
                 vm.grid.refreshList();
             });
+        });
+    }
+    
+    function manageCredentials($event, asset) {
+        if ($event) {
+            $event.stopPropagation();
+        }
+        $mdDialog.show({
+            controller: 'ManageAssetCredentialsController',
+            controllerAs: 'vm',
+            templateUrl: assetCredentialsTemplate,
+            locals: {assetId: asset.id.id, isReadOnly: isCustomerUser()},
+            parent: angular.element($document[0].body),
+            fullscreen: true,
+            targetEvent: $event
+        }).then(function () {
+        }, function () {
         });
     }
 }

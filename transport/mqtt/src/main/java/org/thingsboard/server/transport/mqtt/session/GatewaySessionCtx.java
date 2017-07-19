@@ -91,7 +91,7 @@ public class GatewaySessionCtx {
             });
             GatewayDeviceSessionCtx ctx = new GatewayDeviceSessionCtx(this, device);
             devices.put(deviceName, ctx);
-            log.debug("[{}] Added device [{}] to the gateway session", gatewaySessionId, deviceName);
+            log.info("[{}] Added device [{}] to the gateway session", gatewaySessionId, deviceName);
             processor.process(new BasicToDeviceActorSessionMsg(device, new BasicAdaptorToSessionActorMsg(ctx, new AttributesSubscribeMsg())));
             processor.process(new BasicToDeviceActorSessionMsg(device, new BasicAdaptorToSessionActorMsg(ctx, new RpcSubscribeMsg())));
         }

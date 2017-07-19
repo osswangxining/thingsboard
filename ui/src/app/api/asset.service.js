@@ -23,7 +23,9 @@ function AssetService($http, $q, customerService, userService) {
     var service = {
         getAsset: getAsset,
         getAssets: getAssets,
+        getAssetCredentials: getAssetCredentials,
         saveAsset: saveAsset,
+        saveAssetCredentials: saveAssetCredentials,
         deleteAsset: deleteAsset,
         assignAssetToCustomer: assignAssetToCustomer,
         unassignAssetFromCustomer: unassignAssetFromCustomer,
@@ -108,6 +110,28 @@ function AssetService($http, $q, customerService, userService) {
         return deferred.promise;
     }
 
+    function getAssetCredentials(assetId) {
+        var deferred = $q.defer();
+        var url = '/api/asset/' + assetId + '/credentials';
+        $http.get(url, null).then(function success(response) {
+            deferred.resolve(response.data);
+        }, function fail() {
+            deferred.reject();
+        });
+        return deferred.promise;
+    }
+
+    function saveAssetCredentials(assetCredentials) {
+        var deferred = $q.defer();
+        var url = '/api/asset/credentials';
+        $http.post(url, assetCredentials).then(function success(response) {
+            deferred.resolve(response.data);
+        }, function fail() {
+            deferred.reject();
+        });
+        return deferred.promise;
+    }
+    
     function assignAssetToCustomer(customerId, assetId, ignoreErrors, config) {
         var deferred = $q.defer();
         var url = '/api/customer/' + customerId + '/asset/' + assetId;

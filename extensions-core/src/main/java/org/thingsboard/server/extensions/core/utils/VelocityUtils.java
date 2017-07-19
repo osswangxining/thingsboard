@@ -68,6 +68,8 @@ public class VelocityUtils {
     public static VelocityContext createContext(DeviceMetaData deviceMetaData, FromDeviceMsg payload) {
         VelocityContext context = new VelocityContext();
         context.put("date", new DateTool());
+        context.put("math", new org.apache.velocity.tools.generic.MathTool());
+
         DeviceAttributes deviceAttributes = deviceMetaData.getDeviceAttributes();
 
         pushAttributes(context, deviceAttributes.getClientSideAttributes(), DeviceAttributesFilter.CLIENT_SIDE);

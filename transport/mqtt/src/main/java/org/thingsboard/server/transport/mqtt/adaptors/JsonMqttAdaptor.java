@@ -15,31 +15,58 @@
  */
 package org.thingsboard.server.transport.mqtt.adaptors;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
-import com.google.gson.JsonSyntaxException;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.UnpooledByteBufAllocator;
-import io.netty.handler.codec.mqtt.*;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
-import org.thingsboard.server.common.data.id.SessionId;
-import org.thingsboard.server.common.msg.core.*;
-import org.thingsboard.server.common.msg.kv.AttributesKVMsg;
-import org.thingsboard.server.common.msg.session.*;
-import org.thingsboard.server.common.transport.adaptor.AdaptorException;
-import org.thingsboard.server.common.transport.adaptor.JsonConverter;
-import org.thingsboard.server.transport.mqtt.MqttTopics;
-import org.thingsboard.server.transport.mqtt.session.DeviceSessionCtx;
-import org.thingsboard.server.transport.mqtt.MqttTransportHandler;
-
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+
+import org.springframework.stereotype.Component;
+import org.thingsboard.server.common.data.id.SessionId;
+import org.thingsboard.server.common.msg.core.AttributesSubscribeMsg;
+import org.thingsboard.server.common.msg.core.AttributesUnsubscribeMsg;
+import org.thingsboard.server.common.msg.core.AttributesUpdateNotification;
+import org.thingsboard.server.common.msg.core.BasicGetAttributesRequest;
+import org.thingsboard.server.common.msg.core.GetAttributesResponse;
+import org.thingsboard.server.common.msg.core.ResponseMsg;
+import org.thingsboard.server.common.msg.core.RpcSubscribeMsg;
+import org.thingsboard.server.common.msg.core.RpcUnsubscribeMsg;
+import org.thingsboard.server.common.msg.core.RuleEngineErrorMsg;
+import org.thingsboard.server.common.msg.core.TelemetryUploadRequest;
+import org.thingsboard.server.common.msg.core.ToDeviceRpcRequestMsg;
+import org.thingsboard.server.common.msg.core.ToDeviceRpcResponseMsg;
+import org.thingsboard.server.common.msg.core.ToServerRpcResponseMsg;
+import org.thingsboard.server.common.msg.core.UpdateAttributesRequest;
+import org.thingsboard.server.common.msg.kv.AttributesKVMsg;
+import org.thingsboard.server.common.msg.session.AdaptorToSessionActorMsg;
+import org.thingsboard.server.common.msg.session.BasicAdaptorToSessionActorMsg;
+import org.thingsboard.server.common.msg.session.FromDeviceMsg;
+import org.thingsboard.server.common.msg.session.MsgType;
+import org.thingsboard.server.common.msg.session.SessionActorToAdaptorMsg;
+import org.thingsboard.server.common.msg.session.SessionContext;
+import org.thingsboard.server.common.msg.session.ToDeviceMsg;
+import org.thingsboard.server.common.transport.adaptor.AdaptorException;
+import org.thingsboard.server.common.transport.adaptor.JsonConverter;
+import org.thingsboard.server.transport.mqtt.MqttTopics;
+import org.thingsboard.server.transport.mqtt.MqttTransportHandler;
+import org.thingsboard.server.transport.mqtt.session.AssetSessionCtx;
+import org.thingsboard.server.transport.mqtt.session.DeviceSessionCtx;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.UnpooledByteBufAllocator;
+import io.netty.handler.codec.mqtt.MqttFixedHeader;
+import io.netty.handler.codec.mqtt.MqttMessage;
+import io.netty.handler.codec.mqtt.MqttMessageType;
+import io.netty.handler.codec.mqtt.MqttPublishMessage;
+import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
+import io.netty.handler.codec.mqtt.MqttQoS;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author Andrew Shvayka
@@ -53,7 +80,7 @@ public class JsonMqttAdaptor implements MqttTransportAdaptor {
     private static final ByteBufAllocator ALLOCATOR = new UnpooledByteBufAllocator(false);
 
     @Override
-    public AdaptorToSessionActorMsg convertToActorMsg(DeviceSessionCtx ctx, MsgType type, MqttMessage inbound) throws AdaptorException {
+    public AdaptorToSessionActorMsg convertToActorMsg(SessionContext ctx, MsgType type, MqttMessage inbound) throws AdaptorException {
         FromDeviceMsg msg;
         switch (type) {
             case POST_TELEMETRY_REQUEST:
@@ -91,80 +118,136 @@ public class JsonMqttAdaptor implements MqttTransportAdaptor {
     }
 
     @Override
-    public Optional<MqttMessage> convertToAdaptorMsg(DeviceSessionCtx ctx, SessionActorToAdaptorMsg sessionMsg) throws AdaptorException {
+    public Optional<MqttMessage> convertToAdaptorMsg(SessionContext context, SessionActorToAdaptorMsg sessionMsg) throws AdaptorException {
         MqttMessage result = null;
-        ToDeviceMsg msg = sessionMsg.getMsg();
-        switch (msg.getMsgType()) {
-            case STATUS_CODE_RESPONSE:
-            case GET_ATTRIBUTES_RESPONSE:
-                ResponseMsg<?> responseMsg = (ResponseMsg) msg;
-                if (responseMsg.isSuccess()) {
-                    MsgType requestMsgType = responseMsg.getRequestMsgType();
-                    Integer requestId = responseMsg.getRequestId();
-                    if (requestId >= 0) {
-                        if (requestMsgType == MsgType.POST_ATTRIBUTES_REQUEST || requestMsgType == MsgType.POST_TELEMETRY_REQUEST) {
-                            result = MqttTransportHandler.createMqttPubAckMsg(requestId);
-                        } else if (requestMsgType == MsgType.GET_ATTRIBUTES_REQUEST) {
-                            GetAttributesResponse response = (GetAttributesResponse) msg;
-                            if (response.isSuccess()) {
-                                result = createMqttPublishMsg(ctx,
-                                        MqttTopics.DEVICE_ATTRIBUTES_RESPONSE_TOPIC_PREFIX + requestId,
-                                        response.getData().get(), true);
-                            } else {
-                                throw new AdaptorException(response.getError().get());
-                            }
-                        }
-                    }
-                } else {
-                    if (responseMsg.getError().isPresent()) {
-                        throw new AdaptorException(responseMsg.getError().get());
-                    }
+        if (context instanceof DeviceSessionCtx) {
+          DeviceSessionCtx ctx = (DeviceSessionCtx) context;
+          ToDeviceMsg msg = sessionMsg.getMsg();
+          switch (msg.getMsgType()) {
+          case STATUS_CODE_RESPONSE:
+          case GET_ATTRIBUTES_RESPONSE:
+            ResponseMsg<?> responseMsg = (ResponseMsg) msg;
+            if (responseMsg.isSuccess()) {
+              MsgType requestMsgType = responseMsg.getRequestMsgType();
+              Integer requestId = responseMsg.getRequestId();
+              if (requestId >= 0) {
+                if (requestMsgType == MsgType.POST_ATTRIBUTES_REQUEST || requestMsgType == MsgType.POST_TELEMETRY_REQUEST) {
+                  result = MqttTransportHandler.createMqttPubAckMsg(requestId);
+                } else if (requestMsgType == MsgType.GET_ATTRIBUTES_REQUEST) {
+                  GetAttributesResponse response = (GetAttributesResponse) msg;
+                  if (response.isSuccess()) {
+                    result = createMqttPublishMsg(ctx, MqttTopics.DEVICE_ATTRIBUTES_RESPONSE_TOPIC_PREFIX + requestId,
+                        response.getData().get(), true);
+                  } else {
+                    throw new AdaptorException(response.getError().get());
+                  }
                 }
-                break;
-            case ATTRIBUTES_UPDATE_NOTIFICATION:
-                AttributesUpdateNotification notification = (AttributesUpdateNotification) msg;
-                result = createMqttPublishMsg(ctx, MqttTopics.DEVICE_ATTRIBUTES_TOPIC, notification.getData(), false);
-                break;
-            case TO_DEVICE_RPC_REQUEST:
-                ToDeviceRpcRequestMsg rpcRequest = (ToDeviceRpcRequestMsg) msg;
-                result = createMqttPublishMsg(ctx, MqttTopics.DEVICE_RPC_REQUESTS_TOPIC + rpcRequest.getRequestId(),
-                        rpcRequest);
-                break;
-            case TO_SERVER_RPC_RESPONSE:
-                ToServerRpcResponseMsg rpcResponse = (ToServerRpcResponseMsg) msg;
-                result = createMqttPublishMsg(ctx, MqttTopics.DEVICE_RPC_REQUESTS_TOPIC + rpcResponse.getRequestId(),
-                        rpcResponse);
-                break;
-            case RULE_ENGINE_ERROR:
-                RuleEngineErrorMsg errorMsg = (RuleEngineErrorMsg) msg;
-                result = createMqttPublishMsg(ctx, "errors", JsonConverter.toErrorJson(errorMsg.getErrorMsg()));
-                break;
+              }
+            } else {
+              if (responseMsg.getError().isPresent()) {
+                throw new AdaptorException(responseMsg.getError().get());
+              }
+            }
+            break;
+          case ATTRIBUTES_UPDATE_NOTIFICATION:
+            AttributesUpdateNotification notification = (AttributesUpdateNotification) msg;
+            result = createMqttPublishMsg(ctx, MqttTopics.DEVICE_ATTRIBUTES_TOPIC, notification.getData(), false);
+            break;
+          case TO_DEVICE_RPC_REQUEST:
+            ToDeviceRpcRequestMsg rpcRequest = (ToDeviceRpcRequestMsg) msg;
+            result = createMqttPublishMsg(ctx, MqttTopics.DEVICE_RPC_REQUESTS_TOPIC + rpcRequest.getRequestId(),
+                rpcRequest);
+            break;
+          case TO_SERVER_RPC_RESPONSE:
+            ToServerRpcResponseMsg rpcResponse = (ToServerRpcResponseMsg) msg;
+            result = createMqttPublishMsg(ctx, MqttTopics.DEVICE_RPC_REQUESTS_TOPIC + rpcResponse.getRequestId(),
+                rpcResponse);
+            break;
+          case RULE_ENGINE_ERROR:
+            RuleEngineErrorMsg errorMsg = (RuleEngineErrorMsg) msg;
+            result = createMqttPublishMsg(ctx, "errors", JsonConverter.toErrorJson(errorMsg.getErrorMsg()));
+            break;
+          }
+        } else if(context instanceof AssetSessionCtx) {
+          AssetSessionCtx ctx = (AssetSessionCtx) context;
+          ToDeviceMsg msg = sessionMsg.getMsg();
+          switch (msg.getMsgType()) {
+          case STATUS_CODE_RESPONSE:
+          case GET_ATTRIBUTES_RESPONSE:
+            ResponseMsg<?> responseMsg = (ResponseMsg) msg;
+            if (responseMsg.isSuccess()) {
+              MsgType requestMsgType = responseMsg.getRequestMsgType();
+              Integer requestId = responseMsg.getRequestId();
+              if (requestId >= 0) {
+                if (requestMsgType == MsgType.POST_ATTRIBUTES_REQUEST || requestMsgType == MsgType.POST_TELEMETRY_REQUEST) {
+                  result = MqttTransportHandler.createMqttPubAckMsg(requestId);
+                } else if (requestMsgType == MsgType.GET_ATTRIBUTES_REQUEST) {
+                  GetAttributesResponse response = (GetAttributesResponse) msg;
+                  if (response.isSuccess()) {
+                    result = createMqttPublishMsg(ctx, MqttTopics.THING_ATTRIBUTES_RESPONSE_TOPIC_PREFIX + requestId,
+                        response.getData().get(), true);
+                  } else {
+                    throw new AdaptorException(response.getError().get());
+                  }
+                }
+              }
+            } else {
+              if (responseMsg.getError().isPresent()) {
+                throw new AdaptorException(responseMsg.getError().get());
+              }
+            }
+            break;
+          case ATTRIBUTES_UPDATE_NOTIFICATION:
+            AttributesUpdateNotification notification = (AttributesUpdateNotification) msg;
+            result = createMqttPublishMsg(ctx, MqttTopics.THING_ATTRIBUTES_TOPIC, notification.getData(), false);
+            break;
+          case TO_DEVICE_RPC_REQUEST:
+            ToDeviceRpcRequestMsg rpcRequest = (ToDeviceRpcRequestMsg) msg;
+            result = createMqttPublishMsg(ctx, MqttTopics.THING_RPC_REQUESTS_TOPIC + rpcRequest.getRequestId(),
+                rpcRequest);
+            break;
+          case TO_SERVER_RPC_RESPONSE:
+            ToServerRpcResponseMsg rpcResponse = (ToServerRpcResponseMsg) msg;
+            result = createMqttPublishMsg(ctx, MqttTopics.THING_RPC_REQUESTS_TOPIC + rpcResponse.getRequestId(),
+                rpcResponse);
+            break;
+          case RULE_ENGINE_ERROR:
+            RuleEngineErrorMsg errorMsg = (RuleEngineErrorMsg) msg;
+            result = createMqttPublishMsg(ctx, "errors", JsonConverter.toErrorJson(errorMsg.getErrorMsg()));
+            break;
+          }
         }
         return Optional.ofNullable(result);
     }
 
-    private MqttPublishMessage createMqttPublishMsg(DeviceSessionCtx ctx, String topic, AttributesKVMsg msg, boolean asMap) {
+    private MqttPublishMessage createMqttPublishMsg(SessionContext ctx, String topic, AttributesKVMsg msg, boolean asMap) {
         return createMqttPublishMsg(ctx, topic, JsonConverter.toJson(msg, asMap));
     }
 
-    private MqttPublishMessage createMqttPublishMsg(DeviceSessionCtx ctx, String topic, ToDeviceRpcRequestMsg msg) {
+    private MqttPublishMessage createMqttPublishMsg(SessionContext ctx, String topic, ToDeviceRpcRequestMsg msg) {
         return createMqttPublishMsg(ctx, topic, JsonConverter.toJson(msg, false));
     }
 
-    private MqttPublishMessage createMqttPublishMsg(DeviceSessionCtx ctx, String topic, ToServerRpcResponseMsg msg) {
+    private MqttPublishMessage createMqttPublishMsg(SessionContext ctx, String topic, ToServerRpcResponseMsg msg) {
         return createMqttPublishMsg(ctx, topic, JsonConverter.toJson(msg));
     }
 
-    private MqttPublishMessage createMqttPublishMsg(DeviceSessionCtx ctx, String topic, JsonElement json) {
+    private MqttPublishMessage createMqttPublishMsg(SessionContext ctx, String topic, JsonElement json) {
         MqttFixedHeader mqttFixedHeader =
                 new MqttFixedHeader(MqttMessageType.PUBLISH, false, MqttQoS.AT_LEAST_ONCE, false, 0);
-        MqttPublishVariableHeader header = new MqttPublishVariableHeader(topic, ctx.nextMsgId());
+        int nextMsgId = 0;
+        if(ctx instanceof DeviceSessionCtx) {
+          nextMsgId = ((DeviceSessionCtx)ctx).nextMsgId();
+        } else if(ctx instanceof AssetSessionCtx) {
+          nextMsgId = ((AssetSessionCtx)ctx).nextMsgId();
+        }
+        MqttPublishVariableHeader header = new MqttPublishVariableHeader(topic, nextMsgId);
         ByteBuf payload = ALLOCATOR.buffer();
         payload.writeBytes(GSON.toJson(json).getBytes(UTF8));
         return new MqttPublishMessage(mqttFixedHeader, header, payload);
     }
 
-    private FromDeviceMsg convertToGetAttributesRequest(DeviceSessionCtx ctx, MqttPublishMessage inbound) throws AdaptorException {
+    private FromDeviceMsg convertToGetAttributesRequest(SessionContext ctx, MqttPublishMessage inbound) throws AdaptorException {
         String topicName = inbound.variableHeader().topicName();
         try {
             Integer requestId = Integer.valueOf(topicName.substring(MqttTopics.DEVICE_ATTRIBUTES_REQUEST_TOPIC_PREFIX.length()));
@@ -183,10 +266,13 @@ public class JsonMqttAdaptor implements MqttTransportAdaptor {
         }
     }
 
-    private FromDeviceMsg convertToRpcCommandResponse(DeviceSessionCtx ctx, MqttPublishMessage inbound) throws AdaptorException {
+    private FromDeviceMsg convertToRpcCommandResponse(SessionContext ctx, MqttPublishMessage inbound) throws AdaptorException {
         String topicName = inbound.variableHeader().topicName();
         try {
             Integer requestId = Integer.valueOf(topicName.substring(MqttTopics.DEVICE_RPC_RESPONSE_TOPIC.length()));
+            if(ctx instanceof AssetSessionCtx) {
+              requestId = Integer.valueOf(topicName.substring(MqttTopics.THING_RPC_RESPONSE_TOPIC.length()));
+            }
             String payload = inbound.payload().toString(UTF8);
             return new ToDeviceRpcResponseMsg(
                     requestId,
@@ -224,11 +310,14 @@ public class JsonMqttAdaptor implements MqttTransportAdaptor {
         }
     }
 
-    private FromDeviceMsg convertToServerRpcRequest(DeviceSessionCtx ctx, MqttPublishMessage inbound) throws AdaptorException {
+    private FromDeviceMsg convertToServerRpcRequest(SessionContext ctx, MqttPublishMessage inbound) throws AdaptorException {
         String topicName = inbound.variableHeader().topicName();
         String payload = validatePayload(ctx.getSessionId(), inbound.payload());
         try {
             Integer requestId = Integer.valueOf(topicName.substring(MqttTopics.DEVICE_RPC_REQUESTS_TOPIC.length()));
+            if(ctx instanceof AssetSessionCtx) {
+              requestId = Integer.valueOf(topicName.substring(MqttTopics.THING_RPC_REQUESTS_TOPIC.length()));
+            }
             return JsonConverter.convertToServerRpcRequest(new JsonParser().parse(payload), requestId);
         } catch (IllegalStateException | JsonSyntaxException ex) {
             throw new AdaptorException(ex);
@@ -250,6 +339,8 @@ public class JsonMqttAdaptor implements MqttTransportAdaptor {
             if (payload == null) {
                 log.warn("[{}] Payload is empty!", sessionId.toUidStr());
                 throw new AdaptorException(new IllegalArgumentException("Payload is empty!"));
+            } else {
+              log.info("[{}] Payload is [{}]!", sessionId.toUidStr(), payload);
             }
             return payload;
         } finally {
