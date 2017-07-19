@@ -27,7 +27,7 @@
     <artifactId>application</artifactId>
     <packaging>jar</packaging>
 
-    <name>Thingsboard Server Application</name>
+    <name>ThingsBoard Server Application</name>
     <url>https://thingsboard.io</url>
     <description>Open-source IoT Platform - Device management, data collection, processing and visualization
     </description>
@@ -153,6 +153,14 @@
             <artifactId>velocity-tools</artifactId>
         </dependency>
         <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context-support</artifactId>
         </dependency>
@@ -265,9 +273,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>ru.yandex.qatools.embed</groupId>
-            <artifactId>postgresql-embedded</artifactId>
-            <scope>test</scope>
+            <groupId>org.hsqldb</groupId>
+            <artifactId>hsqldb</artifactId>
         </dependency>
     </dependencies>
 
@@ -383,6 +390,29 @@
                         </configuration>
                     </execution>
                     <execution>
+                        <id>copy-install</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/bin/install</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>src/main/scripts/install</directory>
+                                    <includes>
+                                        <include>**/*.sh</include>
+                                        <include>**/*.xml</include>
+                                    </includes>
+                                    <filtering>true</filtering>
+                                </resource>
+                            </resources>
+                            <filters>
+                                <filter>src/main/filters/unix.properties</filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>copy-windows-control</id>
                         <phase>process-resources</phase>
                         <goals>
@@ -402,7 +432,29 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <id>copy-data-cql</id>
+                        <id>copy-windows-install</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${pkg.win.dist}/install</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>src/main/scripts/install</directory>
+                                    <includes>
+                                        <include>logback.xml</include>
+                                    </includes>
+                                    <filtering>true</filtering>
+                                </resource>
+                            </resources>
+                            <filters>
+                                <filter>src/main/filters/windows.properties</filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-data</id>
                         <phase>process-resources</phase>
                         <goals>
                             <goal>copy-resources</goal>
@@ -411,9 +463,13 @@
                             <outputDirectory>${project.build.directory}/data</outputDirectory>
                             <resources>
                                 <resource>
+                                    <directory>src/main/data</directory>
+                                </resource>
+                                <resource>
                                     <directory>../dao/src/main/resources</directory>
                                     <includes>
                                         <include>**/*.cql</include>
+                                        <include>**/*.sql</include>
                                     </includes>
                                     <filtering>false</filtering>
                                 </resource>
@@ -483,9 +539,12 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <configuration>
+                    <excludes>
+                        <exclude>**/logback.xml</exclude>
+                    </excludes>
                     <archive>
                         <manifestEntries>
-                            <Implementation-Title>Thingsboard</Implementation-Title>
+                            <Implementation-Title>ThingsBoard</Implementation-Title>
                             <Implementation-Version>${project.version}</Implementation-Version>
                         </manifestEntries>
                     </archive>
@@ -495,6 +554,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
+                    <mainClass>org.thingsboard.server.ThingsboardServerApplication</mainClass>
                     <classifier>boot</classifier>
                     <layout>ZIP</layout>
                     <executable>true</executable>

@@ -63,7 +63,13 @@ import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
+<<<<<<< HEAD
 import lombok.extern.slf4j.Slf4j;
+=======
+import static org.thingsboard.server.dao.DaoUtil.toUUIDs;
+import static org.thingsboard.server.dao.model.ModelConstants.NULL_UUID;
+import static org.thingsboard.server.dao.service.Validator.*;
+>>>>>>> thingsboard/master
 
 @Service
 @Slf4j

@@ -7,8 +7,13 @@
         </encoder>
     </appender>
 
+<<<<<<< HEAD
     <logger name="org.thingsboard.server" level="debug"/>
+=======
+    <logger name="org.thingsboard.server" level="INFO"/>
+>>>>>>> thingsboard/master
     <logger name="org.springframework" level="WARN"/>
+    <logger name="org.springframework.boot.test" level="DEBUG"/>
     <logger name="org.apache.cassandra" level="WARN"/>
     <logger name="org.cassandraunit" level="INFO"/>
 

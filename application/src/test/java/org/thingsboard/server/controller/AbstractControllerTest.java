@@ -22,11 +22,16 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Header;
 import io.jsonwebtoken.Jwt;
 import io.jsonwebtoken.Jwts;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
+import org.junit.rules.TestRule;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootContextLoader;
@@ -80,12 +85,12 @@ import static org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppC
 @ActiveProfiles("test")
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = AbstractControllerTest.class, loader = SpringBootContextLoader.class)
-@TestPropertySource(locations = {"classpath:cassandra-test.properties", "classpath:application-test.properties", "classpath:nosql-test.properties"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @Configuration
 @ComponentScan({"org.thingsboard.server"})
 @WebAppConfiguration
 @SpringBootTest
+@Slf4j
 public abstract class AbstractControllerTest {
 
     protected static final String TEST_TENANT_NAME = "TEST TENANT";
@@ -116,6 +121,17 @@ public abstract class AbstractControllerTest {
     
     @Autowired
     private WebApplicationContext webApplicationContext;
+
+    @Rule
+    public TestRule watcher = new TestWatcher() {
+        protected void starting(Description description) {
+            log.info("Starting test: {}", description.getMethodName());
+        }
+
+        protected void finished(Description description) {
+            log.info("Finished test: {}", description.getMethodName());
+        }
+    };
     
     @Autowired
     void setConverters(HttpMessageConverter<?>[] converters) {
@@ -131,6 +147,7 @@ public abstract class AbstractControllerTest {
     
     @Before
     public void setup() throws Exception {
+        log.info("Executing setup");
         if (this.mockMvc == null) {
             this.mockMvc = webAppContextSetup(webApplicationContext)
                     .apply(springSecurity()).build();
@@ -164,13 +181,16 @@ public abstract class AbstractControllerTest {
         createUserAndLogin(customerUser, CUSTOMER_USER_PASSWORD);
 
         logout();
+        log.info("Executed setup");
     }
 
     @After
     public void teardown() throws Exception {
+        log.info("Executing teardown");
         loginSysAdmin();
         doDelete("/api/tenant/"+tenantId.getId().toString())
                 .andExpect(status().isOk());
+        log.info("Executed teardown");
     }
 
     protected void loginSysAdmin() throws Exception {

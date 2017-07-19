@@ -15,12 +15,6 @@
  */
 package org.thingsboard.server.dao.user;
 
-import static org.thingsboard.server.dao.service.Validator.validateId;
-import static org.thingsboard.server.dao.service.Validator.validatePageLink;
-import static org.thingsboard.server.dao.service.Validator.validateString;
-
-import java.util.List;
-
 import com.google.common.util.concurrent.ListenableFuture;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -45,6 +39,10 @@ import org.thingsboard.server.dao.model.ModelConstants;
 import org.thingsboard.server.dao.service.DataValidator;
 import org.thingsboard.server.dao.service.PaginatedRemover;
 import org.thingsboard.server.dao.tenant.TenantDao;
+
+import java.util.List;
+
+import static org.thingsboard.server.dao.service.Validator.*;
 
 @Service
 @Slf4j
@@ -235,9 +233,6 @@ public class UserServiceImpl extends AbstractEntityService implements UserServic
                     
                     switch (authority) {
                         case SYS_ADMIN:
-                            if (user.getId() == null) {
-                                throw new DataValidationException("Creation of system administrator is prohibited!");
-                            }
                             if (!tenantId.getId().equals(ModelConstants.NULL_UUID)
                                     || !customerId.getId().equals(ModelConstants.NULL_UUID)) {
                                     throw new DataValidationException("System administrator can't be assigned neither to tenant nor to customer!");

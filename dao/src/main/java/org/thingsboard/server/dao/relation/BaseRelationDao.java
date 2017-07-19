@@ -28,11 +28,11 @@ import org.thingsboard.server.common.data.id.EntityIdFactory;
 import org.thingsboard.server.common.data.page.TimePageLink;
 import org.thingsboard.server.common.data.relation.EntityRelation;
 import org.thingsboard.server.common.data.relation.RelationTypeGroup;
+import org.thingsboard.server.dao.model.ModelConstants;
+import org.thingsboard.server.dao.model.type.RelationTypeGroupCodec;
 import org.thingsboard.server.dao.nosql.CassandraAbstractAsyncDao;
 import org.thingsboard.server.dao.nosql.CassandraAbstractSearchTimeDao;
 import org.thingsboard.server.dao.util.NoSqlDao;
-import org.thingsboard.server.dao.model.ModelConstants;
-import org.thingsboard.server.dao.model.type.RelationTypeGroupCodec;
 
 import javax.annotation.PostConstruct;
 import java.util.ArrayList;
@@ -126,6 +126,19 @@ public class BaseRelationDao extends CassandraAbstractAsyncDao implements Relati
                 .setString(5, relationType);
         return getFuture(executeAsyncRead(stmt), rs -> rs != null ? rs.one() != null : false);
     }
+
+    @Override
+    public ListenableFuture<EntityRelation> getRelation(EntityId from, EntityId to, String relationType, RelationTypeGroup typeGroup) {
+        BoundStatement stmt = getCheckRelationStmt().bind()
+                .setUUID(0, from.getId())
+                .setString(1, from.getEntityType().name())
+                .setUUID(2, to.getId())
+                .setString(3, to.getEntityType().name())
+                .set(4, typeGroup, relationTypeGroupCodec)
+                .setString(5, relationType);
+        return getFuture(executeAsyncRead(stmt), rs -> rs != null ? getEntityRelation(rs.one()) : null);
+    }
+
 
     @Override
     public ListenableFuture<Boolean> saveRelation(EntityRelation relation) {

@@ -142,6 +142,7 @@ public class JsonMqttAdaptor implements MqttTransportAdaptor {
                     throw new AdaptorException(response.getError().get());
                   }
                 }
+<<<<<<< HEAD
               }
             } else {
               if (responseMsg.getError().isPresent()) {
@@ -216,6 +217,27 @@ public class JsonMqttAdaptor implements MqttTransportAdaptor {
             result = createMqttPublishMsg(ctx, "errors", JsonConverter.toErrorJson(errorMsg.getErrorMsg()));
             break;
           }
+=======
+                break;
+            case ATTRIBUTES_UPDATE_NOTIFICATION:
+                AttributesUpdateNotification notification = (AttributesUpdateNotification) msg;
+                result = createMqttPublishMsg(ctx, MqttTopics.DEVICE_ATTRIBUTES_TOPIC, notification.getData(), false);
+                break;
+            case TO_DEVICE_RPC_REQUEST:
+                ToDeviceRpcRequestMsg rpcRequest = (ToDeviceRpcRequestMsg) msg;
+                result = createMqttPublishMsg(ctx, MqttTopics.DEVICE_RPC_REQUESTS_TOPIC + rpcRequest.getRequestId(),
+                        rpcRequest);
+                break;
+            case TO_SERVER_RPC_RESPONSE:
+                ToServerRpcResponseMsg rpcResponse = (ToServerRpcResponseMsg) msg;
+                result = createMqttPublishMsg(ctx, MqttTopics.DEVICE_RPC_RESPONSE_TOPIC + rpcResponse.getRequestId(),
+                        rpcResponse);
+                break;
+            case RULE_ENGINE_ERROR:
+                RuleEngineErrorMsg errorMsg = (RuleEngineErrorMsg) msg;
+                result = createMqttPublishMsg(ctx, "errors", JsonConverter.toErrorJson(errorMsg.getErrorMsg()));
+                break;
+>>>>>>> thingsboard/master
         }
         return Optional.ofNullable(result);
     }

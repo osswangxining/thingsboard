@@ -376,6 +376,7 @@ function EntityService($http, $q, $filter, $translate, $log, userService, device
                 var aliasInfo = {
                     alias: entityAlias.alias,
                     stateEntity: result.stateEntity,
+                    entityParamName: result.entityParamName,
                     resolveMultiple: filter.resolveMultiple
                 };
                 aliasInfo.resolvedEntities = result.entities;
@@ -392,12 +393,30 @@ function EntityService($http, $q, $filter, $translate, $log, userService, device
         return deferred.promise;
     }
 
+    function getStateEntityId(filter, stateParams) {
+        var entityId = null;
+        if (stateParams) {
+            if (filter.stateEntityParamName && filter.stateEntityParamName.length) {
+                if (stateParams[filter.stateEntityParamName]) {
+                    entityId = stateParams[filter.stateEntityParamName].entityId;
+                }
+            } else {
+                entityId = stateParams.entityId;
+            }
+        }
+        return entityId;
+    }
+
     function resolveAliasFilter(filter, stateParams, maxItems) {
         var deferred = $q.defer();
         var result = {
             entities: [],
             stateEntity: false
         };
+        if (filter.stateEntityParamName && filter.stateEntityParamName.length) {
+            result.entityParamName = filter.stateEntityParamName;
+        }
+        var stateEntityId = getStateEntityId(filter, stateParams);
         switch (filter.type) {
             case types.aliasFilterType.entityList.value:
                 getEntities(filter.entityType, filter.entityList).then(
@@ -431,8 +450,8 @@ function EntityService($http, $q, $filter, $translate, $log, userService, device
                 break;
             case types.aliasFilterType.stateEntity.value:
                 result.stateEntity = true;
-                if (stateParams && stateParams.entityId) {
-                    getEntity(stateParams.entityId.entityType, stateParams.entityId.id).then(
+                if (stateEntityId) {
+                    getEntity(stateEntityId.entityType, stateEntityId.id).then(
                         function success(entity) {
                             result.entities = entitiesToEntitiesInfo([entity]);
                             deferred.resolve(result);
@@ -479,9 +498,9 @@ function EntityService($http, $q, $filter, $translate, $log, userService, device
                 result.stateEntity = filter.rootStateEntity;
                 var rootEntityType;
                 var rootEntityId;
-                if (result.stateEntity && stateParams && stateParams.entityId) {
-                    rootEntityType = stateParams.entityId.entityType;
-                    rootEntityId = stateParams.entityId.id;
+                if (result.stateEntity && stateEntityId) {
+                    rootEntityType = stateEntityId.entityType;
+                    rootEntityId = stateEntityId.id;
                 } else if (!result.stateEntity) {
                     rootEntityType = filter.rootEntity.entityType;
                     rootEntityId = filter.rootEntity.id;
@@ -520,9 +539,9 @@ function EntityService($http, $q, $filter, $translate, $log, userService, device
             case types.aliasFilterType.assetSearchQuery.value:
             case types.aliasFilterType.deviceSearchQuery.value:
                 result.stateEntity = filter.rootStateEntity;
-                if (result.stateEntity && stateParams && stateParams.entityId) {
-                    rootEntityType = stateParams.entityId.entityType;
-                    rootEntityId = stateParams.entityId.id;
+                if (result.stateEntity && stateEntityId) {
+                    rootEntityType = stateEntityId.entityType;
+                    rootEntityId = stateEntityId.id;
                 } else if (!result.stateEntity) {
                     rootEntityType = filter.rootEntity.entityType;
                     rootEntityId = filter.rootEntity.id;
@@ -892,10 +911,10 @@ function EntityService($http, $q, $filter, $translate, $log, userService, device
         }
     }
 
-    function getRelatedEntities(rootEntityId, entityType, entitySubTypes, maxLevel, keys, typeTranslatePrefix, relationType) {
+    function getRelatedEntities(rootEntityId, entityType, entitySubTypes, maxLevel, keys, typeTranslatePrefix, relationType, direction) {
         var deferred = $q.defer();
 
-        var entitySearchQuery = constructRelatedEntitiesSearchQuery(rootEntityId, entityType, entitySubTypes, maxLevel, relationType);
+        var entitySearchQuery = constructRelatedEntitiesSearchQuery(rootEntityId, entityType, entitySubTypes, maxLevel, relationType, direction);
         if (!entitySearchQuery) {
             deferred.reject();
         } else {
@@ -930,12 +949,15 @@ function EntityService($http, $q, $filter, $translate, $log, userService, device
         return deferred.promise;
     }
 
-    function saveRelatedEntity(relatedEntity, parentEntityId, keys, relation) {
+    function saveRelatedEntity(relatedEntity, parentEntityId, keys, relation, direction) {
         var deferred = $q.defer();
+        if (!direction) {
+            direction = types.entitySearchDirection.from;
+        }
         if (relatedEntity.id.id) {
-            updateRelatedEntity(relatedEntity, keys, deferred, relation);
+            updateRelatedEntity(relatedEntity, keys, deferred, relation, direction);
         } else {
-            addRelatedEntity(relatedEntity, parentEntityId, keys, deferred, relation);
+            addRelatedEntity(relatedEntity, parentEntityId, keys, deferred, relation, direction);
         }
         return deferred.promise;
     }
@@ -1073,7 +1095,7 @@ function EntityService($http, $q, $filter, $translate, $log, userService, device
         }
     }
 
-    function addRelatedEntity(relatedEntity, parentEntityId, keys, deferred, relation) {
+    function addRelatedEntity(relatedEntity, parentEntityId, keys, deferred, relation, direction) {
         var entity = {};
         entity.id = relatedEntity.id;
         entity.name = relatedEntity.name;
@@ -1083,13 +1105,18 @@ function EntityService($http, $q, $filter, $translate, $log, userService, device
                 relatedEntity.id = entity.id;
                 if (!relation) {
                     relation = {
-                        from: parentEntityId,
-                        to: relatedEntity.id,
                         type: types.entityRelationType.contains
                     };
-                } else {
-                    relation.to = relatedEntity.id;
                 }
+
+                if (direction == types.entitySearchDirection.from) {
+                    relation.from = parentEntityId;
+                    relation.to = relatedEntity.id;
+                } else {
+                    relation.from = relatedEntity.id;
+                    relation.to = parentEntityId;
+                }
+
                 entityRelationService.saveRelation(relation).then(
                     function success() {
                         updateEntity(entity, relatedEntity, keys, deferred, relation);
@@ -1105,11 +1132,15 @@ function EntityService($http, $q, $filter, $translate, $log, userService, device
         );
     }
 
-    function updateRelatedEntity(relatedEntity, keys, deferred, relation) {
+    function updateRelatedEntity(relatedEntity, keys, deferred, relation, direction) {
         getEntityPromise(relatedEntity.id.entityType, relatedEntity.id.id, {ignoreLoading: true}).then(
             function success(entity) {
                 if (relation) {
-                    relation.to = relatedEntity.id;
+                    if (direction == types.entitySearchDirection.from) {
+                        relation.to = relatedEntity.id;
+                    } else {
+                        relation.from = relatedEntity.id;
+                    }
                     entityRelationService.saveRelation(relation).then(
                         function success() {
                             updateEntity(entity, relatedEntity, keys, deferred);
@@ -1162,16 +1193,19 @@ function EntityService($http, $q, $filter, $translate, $log, userService, device
             );
     }
 
-    function constructRelatedEntitiesSearchQuery(rootEntityId, entityType, entitySubTypes, maxLevel, relationType) {
+    function constructRelatedEntitiesSearchQuery(rootEntityId, entityType, entitySubTypes, maxLevel, relationType, direction) {
 
         var searchQuery = {
             parameters: {
                 rootId: rootEntityId.id,
                 rootType: rootEntityId.entityType,
-                direction: types.entitySearchDirection.from
+                direction: direction
             },
             relationType: relationType
         };
+        if (!direction) {
+            searchQuery.parameters.direction = types.entitySearchDirection.from;
+        }
         if (!relationType) {
             searchQuery.relationType = types.entityRelationType.contains;
         }

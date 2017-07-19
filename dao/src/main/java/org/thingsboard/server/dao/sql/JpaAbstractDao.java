@@ -28,7 +28,7 @@ import org.thingsboard.server.dao.model.BaseEntity;
 import java.util.List;
 import java.util.UUID;
 
-import static org.springframework.transaction.annotation.Propagation.REQUIRES_NEW;
+import static org.thingsboard.server.common.data.UUIDConverter.fromTimeUUID;
 
 /**
  * @author Valerii Sosliuk
@@ -40,12 +40,12 @@ public abstract class JpaAbstractDao<E extends BaseEntity<D>, D>
 
     protected abstract Class<E> getEntityClass();
 
-    protected abstract CrudRepository<E, UUID> getCrudRepository();
+    protected abstract CrudRepository<E, String> getCrudRepository();
 
     protected void setSearchText(E entity) {}
 
     @Override
-    @Transactional(propagation = REQUIRES_NEW)
+    @Transactional
     public D save(D domain) {
         E entity;
         try {
@@ -64,22 +64,22 @@ public abstract class JpaAbstractDao<E extends BaseEntity<D>, D>
     }
 
     @Override
-    @Transactional(propagation = REQUIRES_NEW)
     public D findById(UUID key) {
         log.debug("Get entity by key {}", key);
-        E entity = getCrudRepository().findOne(key);
+        E entity = getCrudRepository().findOne(fromTimeUUID(key));
         return DaoUtil.getData(entity);
     }
 
     @Override
     public ListenableFuture<D> findByIdAsync(UUID key) {
         log.debug("Get entity by key async {}", key);
-        return service.submit(() -> DaoUtil.getData(getCrudRepository().findOne(key)));
+        return service.submit(() -> DaoUtil.getData(getCrudRepository().findOne(fromTimeUUID(key))));
     }
 
     @Override
-    @Transactional(propagation = REQUIRES_NEW)
-    public boolean removeById(UUID key) {
+    @Transactional
+    public boolean removeById(UUID id) {
+        String key = fromTimeUUID(id);
         getCrudRepository().delete(key);
         log.debug("Remove request: {}", key);
         return getCrudRepository().findOne(key) == null;
