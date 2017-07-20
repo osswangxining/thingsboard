@@ -119,7 +119,7 @@ public class AlarmProcessor implements RuleProcessor<AlarmProcessorConfiguration
             log.debug("[{}] Incoming message do not trigger alarm", ctx.getRuleId());
             return md;
         }
-
+        log.info("isActiveAlarm: {}, isClearedAlarm: {}", isActiveAlarm, isClearedAlarm );
         Alarm existing = null;
         if (isActiveAlarm) {
             Alarm alarm = buildAlarm(ctx, msg);

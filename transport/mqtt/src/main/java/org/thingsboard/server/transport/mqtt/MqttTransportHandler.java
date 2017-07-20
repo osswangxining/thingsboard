@@ -153,7 +153,7 @@ public class MqttTransportHandler extends ChannelInboundHandlerAdapter implement
 
     private void processMqttMsg(ChannelHandlerContext ctx, MqttMessage msg) {
         deviceSessionCtx.setChannel(ctx);
-        assetSessionCtx.setChannel(ctx);
+//        assetSessionCtx.setChannel(ctx);
         
         switch (msg.fixedHeader().messageType()) {
             case CONNECT:
@@ -368,17 +368,17 @@ public class MqttTransportHandler extends ChannelInboundHandlerAdapter implement
             ctx.close();
         } else {
           String clientIdentifier = msg.payload().clientIdentifier();
-          if(clientIdentifier != null && clientIdentifier.startsWith("a:")) {
-            //asset
-            boolean login = assetSessionCtx.login(new AssetTokenCredentials(userName));
-            if (!login) {
-              ctx.writeAndFlush(createMqttConnAckMsg(CONNECTION_REFUSED_NOT_AUTHORIZED));
-              ctx.close();
-            } else {
-                ctx.writeAndFlush(createMqttConnAckMsg(CONNECTION_ACCEPTED));
-                connected = true;
-            }
-          } else {
+//          if(clientIdentifier != null && clientIdentifier.startsWith("a:")) {
+//            //asset
+//            boolean login = assetSessionCtx.login(new AssetTokenCredentials(userName));
+//            if (!login) {
+//              ctx.writeAndFlush(createMqttConnAckMsg(CONNECTION_REFUSED_NOT_AUTHORIZED));
+//              ctx.close();
+//            } else {
+//                ctx.writeAndFlush(createMqttConnAckMsg(CONNECTION_ACCEPTED));
+//                connected = true;
+//            }
+//          } else {
             //device
             boolean login = deviceSessionCtx.login(new DeviceTokenCredentials(userName));
             if (!login) {
@@ -389,7 +389,7 @@ public class MqttTransportHandler extends ChannelInboundHandlerAdapter implement
                 connected = true;
                 checkGatewaySession();
             }
-          }
+//          }
         }
         
     }
@@ -485,12 +485,14 @@ public class MqttTransportHandler extends ChannelInboundHandlerAdapter implement
 
     private void checkGatewaySession() {
         Device device = deviceSessionCtx.getDevice();
-        JsonNode infoNode = device.getAdditionalInfo();
-        if (infoNode != null) {
-            JsonNode gatewayNode = infoNode.get("gateway");
-            if (gatewayNode != null && gatewayNode.asBoolean()) {
-                gatewaySessionCtx = new GatewaySessionCtx(processor, deviceService, authService, relationService, deviceSessionCtx);
-            }
+        if(device != null) {
+          JsonNode infoNode = device.getAdditionalInfo();
+          if (infoNode != null) {
+              JsonNode gatewayNode = infoNode.get("gateway");
+              if (gatewayNode != null && gatewayNode.asBoolean()) {
+                  gatewaySessionCtx = new GatewaySessionCtx(processor, deviceService, authService, relationService, deviceSessionCtx);
+              }
+          }
         }
     }
 

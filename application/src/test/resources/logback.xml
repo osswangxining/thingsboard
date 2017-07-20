@@ -8,7 +8,11 @@
     </appender>
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     <logger name="org.thingsboard.server" level="debug"/>
+=======
+    <logger name="org.thingsboard.server" level="INFO"/>
+>>>>>>> thingsboard/master
 =======
     <logger name="org.thingsboard.server" level="INFO"/>
 >>>>>>> thingsboard/master

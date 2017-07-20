@@ -49,7 +49,6 @@ import org.thingsboard.server.common.data.page.TextPageLink;
 import org.thingsboard.server.common.data.relation.EntityRelation;
 import org.thingsboard.server.common.data.security.AssetCredentials;
 import org.thingsboard.server.common.data.security.AssetCredentialsType;
-import org.thingsboard.server.common.data.security.DeviceCredentials;
 import org.thingsboard.server.dao.customer.CustomerDao;
 import org.thingsboard.server.dao.entity.AbstractEntityService;
 import org.thingsboard.server.dao.exception.DataValidationException;
@@ -63,13 +62,7 @@ import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
-<<<<<<< HEAD
 import lombok.extern.slf4j.Slf4j;
-=======
-import static org.thingsboard.server.dao.DaoUtil.toUUIDs;
-import static org.thingsboard.server.dao.model.ModelConstants.NULL_UUID;
-import static org.thingsboard.server.dao.service.Validator.*;
->>>>>>> thingsboard/master
 
 @Service
 @Slf4j
