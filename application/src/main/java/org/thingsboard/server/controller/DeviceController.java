@@ -62,6 +62,9 @@ public class DeviceController extends BaseController {
     public Device saveDevice(@RequestBody Device device) throws ThingsboardException {
         try {
             device.setTenantId(getCurrentUser().getTenantId());
+            if(device.getType() == null) {
+              device.setType("default");
+            }
             Device savedDevice = checkNotNull(deviceService.saveDevice(device));
             actorService
                     .onDeviceNameOrTypeUpdate(

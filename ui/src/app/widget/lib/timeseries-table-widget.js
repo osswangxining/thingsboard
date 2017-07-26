@@ -36,7 +36,9 @@ function TimeseriesTableWidget() {
         scope: true,
         bindToController: {
             tableId: '=',
-            ctx: '='
+            config: '=',
+            datasources: '=',
+            data: '='
         },
         controller: TimeseriesTableWidgetController,
         controllerAs: 'vm',
@@ -51,12 +53,10 @@ function TimeseriesTableWidgetController($element, $scope, $filter) {
     vm.sources = [];
     vm.sourceIndex = 0;
 
-    $scope.$watch('vm.ctx', function() {
-       if (vm.ctx) {
-           vm.settings = vm.ctx.settings;
-           vm.widgetConfig = vm.ctx.widgetConfig;
-           vm.data = vm.ctx.data;
-           vm.datasources = vm.ctx.datasources;
+    $scope.$watch('vm.config', function() {
+       if (vm.config) {
+           vm.settings = vm.config.settings;
+           vm.widgetConfig = vm.config.widgetConfig;
            initialize();
        }
     });
@@ -119,8 +119,11 @@ function TimeseriesTableWidgetController($element, $scope, $filter) {
             }
             return hash;
         }
-        updateDatasources();
     }
+
+    $scope.$watch('vm.datasources', function() {
+        updateDatasources();
+    });
 
     $scope.$on('timeseries-table-data-updated', function(event, tableId) {
         if (vm.tableId == tableId) {
@@ -183,8 +186,6 @@ function TimeseriesTableWidgetController($element, $scope, $filter) {
                 } catch (e) {
                     content = strContent;
                 }
-            } else {
-                content = vm.ctx.utils.formatValue(value, contentInfo.decimals, contentInfo.units);
             }
             return content;
         }
@@ -270,9 +271,7 @@ function TimeseriesTableWidgetController($element, $scope, $filter) {
 
                     source.ts.contentsInfo.push({
                         useCellContentFunction: useCellContentFunction,
-                        cellContentFunction: cellContentFunction,
-                        units: dataKey.units,
-                        decimals: dataKey.decimals
+                        cellContentFunction: cellContentFunction
                     });
 
                 }

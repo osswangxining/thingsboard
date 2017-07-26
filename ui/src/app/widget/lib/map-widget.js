@@ -15,7 +15,7 @@
  */
 
 import tinycolor from 'tinycolor2';
-
+//import TbBaiduMap from './baidu-map';
 import TbGoogleMap from './google-map';
 import TbOpenStreetMap from './openstreet-map';
 
@@ -113,6 +113,8 @@ export default class TbMapWidget {
             this.map = new TbGoogleMap($element, initCallback, this.defaultZoomLevel, this.dontFitMapBounds, minZoomLevel, settings.gmApiKey, settings.gmDefaultMapType);
         } else if (mapProvider === 'openstreet-map') {
             this.map = new TbOpenStreetMap($element, initCallback, this.defaultZoomLevel, this.dontFitMapBounds, minZoomLevel);
+//        } else if(mapProvider == 'baidu-map') {
+//            this.map = new TbBaiduMap($element, initCallback, this.defaultZoomLevel, this.dontFitMapBounds, minZoomLevel, settings.gmApiKey, settings.gmDefaultMapType);
         }
 
     }

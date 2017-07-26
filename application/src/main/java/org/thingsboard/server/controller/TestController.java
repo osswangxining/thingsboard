@@ -1,14 +1,17 @@
 package org.thingsboard.server.controller;
 
+import java.io.IOException;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.io.IOUtils;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.thingsboard.server.ThingsboardServerApplication;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -26,6 +29,19 @@ public class TestController extends BaseController {
     return jo;
   }
 
+  @RequestMapping(value = "/baidu.js", method = RequestMethod.GET)
+  @ResponseBody
+  public String baidujs() {
+    String readFileToString = "";
+    try {
+      //System.out.println(ThingsboardServerApplication.class.getResourceAsStream("../../../baidu_map.js"));
+      readFileToString = IOUtils.toString(ThingsboardServerApplication.class.getResourceAsStream("../../../baidu_map.js"), "UTF-8");
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    return readFileToString;
+  }
+  
   @RequestMapping(value = "/post", method = RequestMethod.POST)
   @ResponseBody
   public Map<String, String> post() {
