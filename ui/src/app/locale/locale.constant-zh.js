@@ -425,7 +425,10 @@ export default function addLocaleChinese(locales) {
             "min-vertical-margin-message" : "只允许0作为最小垂直边距值。",
             "max-vertical-margin-message" : "只允许50作为最大垂直边距值。",
             "display-title" : "显示仪表板标题",
+            "toolbar-always-open": "始终打开工具栏",
             "title-color" : "标题颜色",
+            "display-dashboards-selection": "显示仪表板选择",
+            "display-entities-selection": "显示设备选择",
             "display-device-selection" : "显示设备选择",
             "display-dashboard-timewindow" : "显示时间窗口",
             "display-dashboard-export" : "显示导出",
@@ -452,7 +455,8 @@ export default function addLocaleChinese(locales) {
             "public" : "公共",
             "public-link" : "公共链接",
             "copy-public-link" : "复制公共链接",
-            "public-link-copied-message" : "仪表板的公共链接已被复制到剪贴板"
+            "public-link-copied-message" : "仪表板的公共链接已被复制到剪贴板",
+            "state-controller": "State controller"
         },
         "datakey" : {
             "settings": "设置",

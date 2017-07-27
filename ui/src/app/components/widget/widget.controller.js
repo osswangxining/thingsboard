@@ -73,6 +73,7 @@ export default function WidgetController($scope, $state, $timeout, $window, $ele
         decimals: angular.isDefined(widget.config.decimals) ? widget.config.decimals : 2,
         subscriptions: {},
         defaultSubscription: null,
+        dashboardTimewindow: dashboardTimewindow,
         timewindowFunctions: {
             onUpdateTimewindow: function(startTimeMs, endTimeMs) {
                 if (widgetContext.defaultSubscription) {
@@ -646,6 +647,7 @@ export default function WidgetController($scope, $state, $timeout, $window, $ele
 
         $scope.$on('dashboardTimewindowChanged', function (event, newDashboardTimewindow) {
             vm.dashboardTimewindow = newDashboardTimewindow;
+            widgetContext.dashboardTimewindow = newDashboardTimewindow;
         });
 
         $scope.$on("$destroy", function () {
@@ -811,14 +813,17 @@ export default function WidgetController($scope, $state, $timeout, $window, $ele
         return (val - parseFloat( val ) + 1) >= 0;
     }
 
-    function formatValue(value, dec, units) {
+    function formatValue(value, dec, units, showZeroDecimals) {
         if (angular.isDefined(value) &&
             value !== null && isNumeric(value)) {
             var formatted = Number(value);
             if (angular.isDefined(dec)) {
                 formatted = formatted.toFixed(dec);
             }
-            formatted = (formatted * 1).toString();
+            if (!showZeroDecimals) {
+                formatted = (formatted * 1);
+            }
+            formatted = formatted.toString();
             if (angular.isDefined(units) && units.length > 0) {
                 formatted += ' ' + units;
             }

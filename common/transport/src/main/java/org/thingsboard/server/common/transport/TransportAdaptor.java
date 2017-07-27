@@ -25,8 +25,8 @@ import java.util.Optional;
 
 public interface TransportAdaptor<C extends SessionContext, T, V> {
 
-    AdaptorToSessionActorMsg convertToActorMsg(SessionContext ctx, MsgType type, T inbound) throws AdaptorException;
+    AdaptorToSessionActorMsg convertToActorMsg(C ctx, MsgType type, T inbound) throws AdaptorException;
 
-    Optional<V> convertToAdaptorMsg(SessionContext ctx, SessionActorToAdaptorMsg msg) throws AdaptorException;
+    Optional<V> convertToAdaptorMsg(C ctx, SessionActorToAdaptorMsg msg) throws AdaptorException;
 
 }

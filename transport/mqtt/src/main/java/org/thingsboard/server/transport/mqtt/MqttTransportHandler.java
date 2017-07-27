@@ -252,37 +252,37 @@ public class MqttTransportHandler extends ChannelInboundHandlerAdapter implement
     }
     
     private void processAssetPublish(ChannelHandlerContext ctx, MqttPublishMessage mqttMsg, String topicName, int msgId) {
-      AdaptorToSessionActorMsg msg = null;
-      try {
-          if (topicName.equals(THING_TELEMETRY_TOPIC)) {
-              msg = adaptor.convertToActorMsg(assetSessionCtx, POST_TELEMETRY_REQUEST, mqttMsg);
-          } else if (topicName.equals(DEVICE_ATTRIBUTES_TOPIC)) {
-              msg = adaptor.convertToActorMsg(assetSessionCtx, POST_ATTRIBUTES_REQUEST, mqttMsg);
-          } else if (topicName.startsWith(DEVICE_ATTRIBUTES_REQUEST_TOPIC_PREFIX)) {
-              msg = adaptor.convertToActorMsg(assetSessionCtx, GET_ATTRIBUTES_REQUEST, mqttMsg);
-              if (msgId >= 0) {
-                  ctx.writeAndFlush(createMqttPubAckMsg(msgId));
-              }
-          } else if (topicName.startsWith(DEVICE_RPC_RESPONSE_TOPIC)) {
-              msg = adaptor.convertToActorMsg(assetSessionCtx, TO_DEVICE_RPC_RESPONSE, mqttMsg);
-              if (msgId >= 0) {
-                  ctx.writeAndFlush(createMqttPubAckMsg(msgId));
-              }
-          } else if (topicName.startsWith(DEVICE_RPC_REQUESTS_TOPIC)) {
-              msg = adaptor.convertToActorMsg(assetSessionCtx, TO_SERVER_RPC_REQUEST, mqttMsg);
-              if (msgId >= 0) {
-                  ctx.writeAndFlush(createMqttPubAckMsg(msgId));
-              }
-          }
-      } catch (AdaptorException e) {
-          log.warn("[{}] Failed to process publish msg [{}][{}]", sessionId, topicName, msgId, e);
-      }
-      if (msg != null) {
-          processor.process(new BasicToAssetActorSessionMsg(assetSessionCtx.getAsset(), msg));
-      } else {
-          log.info("[{}] Closing current session due to invalid publish msg [{}][{}]", sessionId, topicName, msgId);
-          ctx.close();
-      }
+//      AdaptorToSessionActorMsg msg = null;
+//      try {
+//          if (topicName.equals(THING_TELEMETRY_TOPIC)) {
+//              msg = adaptor.convertToActorMsg(assetSessionCtx, POST_TELEMETRY_REQUEST, mqttMsg);
+//          } else if (topicName.equals(DEVICE_ATTRIBUTES_TOPIC)) {
+//              msg = adaptor.convertToActorMsg(assetSessionCtx, POST_ATTRIBUTES_REQUEST, mqttMsg);
+//          } else if (topicName.startsWith(DEVICE_ATTRIBUTES_REQUEST_TOPIC_PREFIX)) {
+//              msg = adaptor.convertToActorMsg(assetSessionCtx, GET_ATTRIBUTES_REQUEST, mqttMsg);
+//              if (msgId >= 0) {
+//                  ctx.writeAndFlush(createMqttPubAckMsg(msgId));
+//              }
+//          } else if (topicName.startsWith(DEVICE_RPC_RESPONSE_TOPIC)) {
+//              msg = adaptor.convertToActorMsg(assetSessionCtx, TO_DEVICE_RPC_RESPONSE, mqttMsg);
+//              if (msgId >= 0) {
+//                  ctx.writeAndFlush(createMqttPubAckMsg(msgId));
+//              }
+//          } else if (topicName.startsWith(DEVICE_RPC_REQUESTS_TOPIC)) {
+//              msg = adaptor.convertToActorMsg(assetSessionCtx, TO_SERVER_RPC_REQUEST, mqttMsg);
+//              if (msgId >= 0) {
+//                  ctx.writeAndFlush(createMqttPubAckMsg(msgId));
+//              }
+//          }
+//      } catch (AdaptorException e) {
+//          log.warn("[{}] Failed to process publish msg [{}][{}]", sessionId, topicName, msgId, e);
+//      }
+//      if (msg != null) {
+//          processor.process(new BasicToAssetActorSessionMsg(assetSessionCtx.getAsset(), msg));
+//      } else {
+//          log.info("[{}] Closing current session due to invalid publish msg [{}][{}]", sessionId, topicName, msgId);
+//          ctx.close();
+//      }
   }
 
     private void processSubscribe(ChannelHandlerContext ctx, MqttSubscribeMessage mqttMsg) {

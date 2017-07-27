@@ -61,12 +61,12 @@ public class AssetSessionCtx extends AssetAwareSessionContext {
 
     @Override
     public void onMsg(SessionActorToAdaptorMsg msg) throws SessionException {
-        try {
-            adaptor.convertToAdaptorMsg(this, msg).ifPresent(this::pushToNetwork);
-        } catch (AdaptorException e) {
-            //TODO: close channel with disconnect;
-            logAndWrap(e);
-        }
+//        try {
+//            adaptor.convertToAdaptorMsg(this, msg).ifPresent(this::pushToNetwork);
+//        } catch (AdaptorException e) {
+//            //TODO: close channel with disconnect;
+//            logAndWrap(e);
+//        }
     }
 
     private void logAndWrap(AdaptorException e) throws SessionException {

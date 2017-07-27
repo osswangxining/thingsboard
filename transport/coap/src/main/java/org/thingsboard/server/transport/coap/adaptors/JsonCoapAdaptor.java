@@ -48,12 +48,8 @@ import org.thingsboard.server.transport.coap.session.CoapSessionCtx;
 public class JsonCoapAdaptor implements CoapTransportAdaptor {
 
     @Override
-    public AdaptorToSessionActorMsg convertToActorMsg(SessionContext context, MsgType type, Request inbound) throws AdaptorException {
+    public AdaptorToSessionActorMsg convertToActorMsg(CoapSessionCtx ctx, MsgType type, Request inbound) throws AdaptorException {
         FromDeviceMsg msg = null;
-        if(!(context instanceof CoapSessionCtx)) {
-          throw new AdaptorException("Current context is not CoapSessionCtx.");
-        }
-        CoapSessionCtx ctx = (CoapSessionCtx) context;
         switch (type) {
             case POST_TELEMETRY_REQUEST:
                 msg = convertToTelemetryUploadRequest(ctx, inbound);
@@ -87,7 +83,6 @@ public class JsonCoapAdaptor implements CoapTransportAdaptor {
                 throw new AdaptorException(new IllegalArgumentException("Unsupported msg type: " + type + "!"));
         }
         return new BasicAdaptorToSessionActorMsg(ctx, msg);
-        
     }
 
     private FromDeviceMsg convertToDeviceRpcResponse(CoapSessionCtx ctx, Request inbound) throws AdaptorException {
@@ -107,12 +102,7 @@ public class JsonCoapAdaptor implements CoapTransportAdaptor {
     }
 
     @Override
-    public Optional<Response> convertToAdaptorMsg(SessionContext context, SessionActorToAdaptorMsg source) throws AdaptorException {
-      if(!(context instanceof CoapSessionCtx)) {
-        throw new AdaptorException("Current context is not CoapSessionCtx.");
-      }
-      CoapSessionCtx ctx = (CoapSessionCtx) context;
-      
+    public Optional<Response> convertToAdaptorMsg(CoapSessionCtx ctx, SessionActorToAdaptorMsg source) throws AdaptorException {
         ToDeviceMsg msg = source.getMsg();
         switch (msg.getMsgType()) {
             case STATUS_CODE_RESPONSE:

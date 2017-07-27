@@ -36,6 +36,70 @@
         "dataKeySettingsSchema": "{}\n",
         "defaultConfig": "{\"targetDeviceAliases\":[],\"showTitle\":true,\"backgroundColor\":\"#010101\",\"color\":\"rgba(255, 254, 254, 0.87)\",\"padding\":\"0px\",\"settings\":{\"parseGpioStatusFunction\":\"return body[pin] === true;\",\"gpioStatusChangeRequest\":{\"method\":\"setGpioStatus\",\"paramsBody\":\"{\\n   \\\"pin\\\": \\\"{$pin}\\\",\\n   \\\"enabled\\\": \\\"{$enabled}\\\"\\n}\"},\"requestTimeout\":500,\"switchPanelBackgroundColor\":\"#b71c1c\",\"gpioStatusRequest\":{\"method\":\"getGpioStatus\",\"paramsBody\":\"{}\"},\"gpioList\":[{\"pin\":1,\"label\":\"GPIO 1\",\"row\":0,\"col\":0,\"_uniqueKey\":0},{\"pin\":2,\"label\":\"GPIO 2\",\"row\":0,\"col\":1,\"_uniqueKey\":1},{\"pin\":3,\"label\":\"GPIO 3\",\"row\":1,\"col\":0,\"_uniqueKey\":2}]},\"title\":\"RPC remote shell\",\"dropShadow\":true,\"enableFullscreen\":true,\"widgetStyle\":{},\"titleStyle\":{\"fontSize\":\"16px\",\"fontWeight\":400},\"useDashboardTimewindow\":true,\"showLegend\":false,\"actions\":{}}"
       }
+    },
+    {
+      "alias": "knob_control",
+      "name": "Knob Control",
+      "descriptor": {
+        "type": "rpc",
+        "sizeX": 5,
+        "sizeY": 4.5,
+        "resources": [],
+        "templateHtml": "<tb-knob ctx='ctx'></tb-knob>",
+        "templateCss": "",
+        "controllerScript": "self.onInit = function() {\n    var scope = self.ctx.$scope;\n    scope.ctx = self.ctx;\n}\n\nself.onResize = function() {\n    if (self.ctx.resize) {\n        self.ctx.resize();\n    }\n}\n\nself.onDestroy = function() {\n}\n",
+        "settingsSchema": "{\n    \"schema\": {\n        \"type\": \"object\",\n        \"title\": \"Settings\",\n        \"properties\": {\n            \"minValue\": {\n                \"title\": \"Minimum value\",\n                \"type\": \"number\",\n                \"default\": 0\n            },\n            \"maxValue\": {\n                \"title\": \"Maximum value\",\n                \"type\": \"number\",\n                \"default\": 100\n            },\n            \"initialValue\": {\n                \"title\": \"Initial value\",\n                \"type\": \"number\",\n                \"default\": 50\n            },\n            \"title\": {\n                \"title\": \"Knob title\",\n                \"type\": \"string\",\n                \"default\": \"\"\n            },\n            \"getValueMethod\": {\n                \"title\": \"Get value method\",\n                \"type\": \"string\",\n                \"default\": \"getValue\"\n            },\n            \"setValueMethod\": {\n                \"title\": \"Set value method\",\n                \"type\": \"string\",\n                \"default\": \"setValue\"\n            },\n            \"requestTimeout\": {\n                \"title\": \"RPC request timeout\",\n                \"type\": \"number\",\n                \"default\": 500\n            }\n        },\n        \"required\": [\"minValue\", \"maxValue\", \"getValueMethod\", \"setValueMethod\", \"requestTimeout\"]\n    },\n    \"form\": [\n        \"minValue\",\n        \"maxValue\",\n        \"initialValue\",\n        \"title\",\n        \"getValueMethod\",\n        \"setValueMethod\",\n        \"requestTimeout\"\n    ]\n}",
+        "dataKeySettingsSchema": "{}\n",
+        "defaultConfig": "{\"targetDeviceAliases\":[],\"showTitle\":false,\"backgroundColor\":\"#fff\",\"color\":\"rgba(0, 0, 0, 0.87)\",\"padding\":\"0px\",\"settings\":{\"requestTimeout\":500,\"maxValue\":100,\"initialValue\":50,\"minValue\":0,\"title\":\"Knob control\",\"getValueMethod\":\"getValue\",\"setValueMethod\":\"setValue\"},\"title\":\"Knob Control\",\"dropShadow\":true,\"enableFullscreen\":false,\"widgetStyle\":{},\"titleStyle\":{\"fontSize\":\"16px\",\"fontWeight\":400},\"useDashboardTimewindow\":true,\"showLegend\":false,\"actions\":{},\"decimals\":2}"
+      }
+    },
+    {
+      "alias": "switch_control",
+      "name": "Switch Control",
+      "descriptor": {
+        "type": "rpc",
+        "sizeX": 4,
+        "sizeY": 2.5,
+        "resources": [],
+        "templateHtml": "<tb-switch ctx='ctx'></tb-switch>",
+        "templateCss": "",
+        "controllerScript": "self.onInit = function() {\n    var scope = self.ctx.$scope;\n    scope.ctx = self.ctx;\n}\n\nself.onResize = function() {\n    if (self.ctx.resize) {\n        self.ctx.resize();\n    }\n}\n\nself.onDestroy = function() {\n}\n",
+        "settingsSchema": "{\n    \"schema\": {\n        \"type\": \"object\",\n        \"title\": \"Settings\",\n        \"properties\": {\n            \"initialValue\": {\n                \"title\": \"Initial value\",\n                \"type\": \"boolean\",\n                \"default\": false\n            },\n            \"title\": {\n                \"title\": \"Switch title\",\n                \"type\": \"string\",\n                \"default\": \"\"\n            },\n            \"showOnOffLabels\": {\n                \"title\": \"Show on/off labels\",\n                \"type\": \"boolean\",\n                \"default\": true\n            },\n            \"getValueMethod\": {\n                \"title\": \"Get value method\",\n                \"type\": \"string\",\n                \"default\": \"getValue\"\n            },\n            \"setValueMethod\": {\n                \"title\": \"Set value method\",\n                \"type\": \"string\",\n                \"default\": \"setValue\"\n            },\n            \"requestTimeout\": {\n                \"title\": \"RPC request timeout\",\n                \"type\": \"number\",\n                \"default\": 500\n            }\n        },\n        \"required\": [\"getValueMethod\", \"setValueMethod\", \"requestTimeout\"]\n    },\n    \"form\": [\n        \"initialValue\",\n        \"title\",\n        \"showOnOffLabels\",\n        \"getValueMethod\",\n        \"setValueMethod\",\n        \"requestTimeout\"\n    ]\n}",
+        "dataKeySettingsSchema": "{}\n",
+        "defaultConfig": "{\"targetDeviceAliases\":[],\"showTitle\":false,\"backgroundColor\":\"#fff\",\"color\":\"rgba(0, 0, 0, 0.87)\",\"padding\":\"0px\",\"settings\":{\"requestTimeout\":500,\"initialValue\":false,\"getValueMethod\":\"getValue\",\"setValueMethod\":\"setValue\",\"showOnOffLabels\":true,\"title\":\"Switch control\"},\"title\":\"Switch Control\",\"dropShadow\":true,\"enableFullscreen\":false,\"widgetStyle\":{},\"titleStyle\":{\"fontSize\":\"16px\",\"fontWeight\":400},\"useDashboardTimewindow\":true,\"showLegend\":false,\"actions\":{},\"decimals\":2}"
+      }
+    },
+    {
+      "alias": "round_switch",
+      "name": "Round switch",
+      "descriptor": {
+        "type": "rpc",
+        "sizeX": 2.5,
+        "sizeY": 2,
+        "resources": [],
+        "templateHtml": "<tb-round-switch ctx='ctx'></tb-round-switch>",
+        "templateCss": "",
+        "controllerScript": "self.onInit = function() {\n    var scope = self.ctx.$scope;\n    scope.ctx = self.ctx;\n}\n\nself.onResize = function() {\n    if (self.ctx.resize) {\n        self.ctx.resize();\n    }\n}\n\nself.onDestroy = function() {\n}\n",
+        "settingsSchema": "{\n    \"schema\": {\n        \"type\": \"object\",\n        \"title\": \"Settings\",\n        \"properties\": {\n            \"initialValue\": {\n                \"title\": \"Initial value\",\n                \"type\": \"boolean\",\n                \"default\": false\n            },\n            \"title\": {\n                \"title\": \"Switch title\",\n                \"type\": \"string\",\n                \"default\": \"\"\n            },\n            \"getValueMethod\": {\n                \"title\": \"Get value method\",\n                \"type\": \"string\",\n                \"default\": \"getValue\"\n            },\n            \"setValueMethod\": {\n                \"title\": \"Set value method\",\n                \"type\": \"string\",\n                \"default\": \"setValue\"\n            },\n            \"requestTimeout\": {\n                \"title\": \"RPC request timeout\",\n                \"type\": \"number\",\n                \"default\": 500\n            }\n        },\n        \"required\": [\"getValueMethod\", \"setValueMethod\", \"requestTimeout\"]\n    },\n    \"form\": [\n        \"initialValue\",\n        \"title\",\n        \"getValueMethod\",\n        \"setValueMethod\",\n        \"requestTimeout\"\n    ]\n}",
+        "dataKeySettingsSchema": "{}\n",
+        "defaultConfig": "{\"targetDeviceAliases\":[],\"showTitle\":false,\"backgroundColor\":\"#fff\",\"color\":\"rgba(0, 0, 0, 0.87)\",\"padding\":\"0px\",\"settings\":{\"requestTimeout\":500,\"initialValue\":false,\"getValueMethod\":\"getValue\",\"setValueMethod\":\"setValue\",\"showOnOffLabels\":true,\"title\":\"Round switch\"},\"title\":\"Round switch\",\"dropShadow\":true,\"enableFullscreen\":false,\"widgetStyle\":{},\"titleStyle\":{\"fontSize\":\"16px\",\"fontWeight\":400},\"useDashboardTimewindow\":true,\"showLegend\":false,\"actions\":{},\"decimals\":2}"
+      }
+    },
+    {
+      "alias": "led_indicator",
+      "name": "Led indicator",
+      "descriptor": {
+        "type": "rpc",
+        "sizeX": 2.5,
+        "sizeY": 2.5,
+        "resources": [],
+        "templateHtml": "<tb-led-indicator ctx='ctx'></tb-led-indicator>",
+        "templateCss": "",
+        "controllerScript": "self.onInit = function() {\n    var scope = self.ctx.$scope;\n    scope.ctx = self.ctx;\n}\n\nself.onResize = function() {\n    if (self.ctx.resize) {\n        self.ctx.resize();\n    }\n}\n\nself.onDestroy = function() {\n}\n",
+        "settingsSchema": "{\n    \"schema\": {\n        \"type\": \"object\",\n        \"title\": \"Settings\",\n        \"properties\": {\n            \"initialValue\": {\n                \"title\": \"Initial value\",\n                \"type\": \"boolean\",\n                \"default\": false\n            },\n            \"title\": {\n                \"title\": \"LED title\",\n                \"type\": \"string\",\n                \"default\": \"\"\n            },\n            \"ledColor\": {\n                \"title\": \"LED Color\",\n                \"type\": \"string\",\n                \"default\": \"green\"\n            },\n            \"scheckStatusMethod\": {\n                \"title\": \"Check device status method\",\n                \"type\": \"string\",\n                \"default\": \"checkStatus\"\n            },\n            \"valueAttribute\": {\n                \"title\": \"Device attribute containing led status value\",\n                \"type\": \"string\",\n                \"default\": \"value\"\n            },\n            \"requestTimeout\": {\n                \"title\": \"RPC request timeout (ms)\",\n                \"type\": \"number\",\n                \"default\": 500\n            }\n        },\n        \"required\": [\"scheckStatusMethod\", \"valueAttribute\", \"requestTimeout\"]\n    },\n    \"form\": [\n        \"initialValue\",\n        \"title\",\n        {\n          \"key\": \"ledColor\",\n          \"type\": \"color\"\n        },\n        \"scheckStatusMethod\",\n        \"valueAttribute\",\n        \"requestTimeout\"\n    ]\n}",
+        "dataKeySettingsSchema": "{}\n",
+        "defaultConfig": "{\"targetDeviceAliases\":[],\"showTitle\":false,\"backgroundColor\":\"#fff\",\"color\":\"rgba(0, 0, 0, 0.87)\",\"padding\":\"0px\",\"settings\":{\"requestTimeout\":500,\"initialValue\":true,\"title\":\"Led indicator\",\"ledColor\":\"#4caf50\",\"scheckStatusMethod\":\"checkStatus\",\"valueAttribute\":\"value\"},\"title\":\"Led indicator\",\"dropShadow\":true,\"enableFullscreen\":false,\"widgetStyle\":{},\"titleStyle\":{\"fontSize\":\"16px\",\"fontWeight\":400},\"useDashboardTimewindow\":true,\"showLegend\":false,\"actions\":{},\"decimals\":2}"
+      }
     }
   ]
 }

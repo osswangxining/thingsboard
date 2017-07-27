@@ -74,6 +74,11 @@ export default function AppRun($rootScope, $window, $injector, $location, $log, 
 
             var locationSearch = $location.search();
             var publicId = locationSearch.publicId;
+            var activateToken = locationSearch.activateToken;
+
+            if (to.url === '/createPassword?activateToken' && activateToken && activateToken.length) {
+                userService.setUserFromJwtToken(null, null, false);
+            }
 
             if (userService.isUserLoaded() === true) {
                 if (userService.isAuthenticated()) {
